@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Globe2, BookOpen, MessageSquareDashed, Heart, Info } from 'lucide-react'
+import { Globe2, BookOpen, MessageSquareDashed, Heart, Info, ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
 import type { AppMode } from './types/spanish'
 import SpanishFeature from './components/spanish/SpanishFeature'
@@ -35,10 +35,11 @@ export default function App() {
 
               {/* Right side: feature label + info button */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-bg-elevated border border-border-subtle">
+                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-bg-elevated border border-border-subtle press-active hover:border-accent/40 hover:text-accent transition-colors">
                   <span className="text-sm">🇪🇸</span>
                   <span className="text-xs font-medium text-text-secondary">Spanish</span>
-                </div>
+                  <ChevronDown size={11} className="text-text-muted" />
+                </button>
                 <button
                   onClick={() => setShowHelp(true)}
                   className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-accent press-active transition-colors"
@@ -83,8 +84,12 @@ export default function App() {
 
       </div>
 
-      {/* Help overlay */}
-      {showHelp && <Onboarding onComplete={() => setShowHelp(false)} />}
+      {/* Help overlay — fixed so it sits above everything */}
+      {showHelp && (
+        <div className="fixed inset-0 z-50">
+          <Onboarding onComplete={() => setShowHelp(false)} />
+        </div>
+      )}
     </div>
   )
 }
