@@ -1,23 +1,13 @@
 import { useState } from 'react'
-import { Globe2, BookOpen, MessageSquareDashed, Heart } from 'lucide-react'
+import { Globe2, BookOpen, MessageSquareDashed, Heart, Info } from 'lucide-react'
 import clsx from 'clsx'
 import type { AppMode } from './types/spanish'
-import { hasCompletedOnboarding, markOnboardingComplete } from './lib/storage'
 import SpanishFeature from './components/spanish/SpanishFeature'
 import Onboarding from './components/Onboarding'
 
 export default function App() {
-  const [onboarded, setOnboarded] = useState(() => hasCompletedOnboarding())
   const [activeTab, setActiveTab] = useState<AppMode>('dictionary')
-
-  const handleOnboardingComplete = () => {
-    markOnboardingComplete()
-    setOnboarded(true)
-  }
-
-  if (!onboarded) {
-    return <Onboarding onComplete={handleOnboardingComplete} />
-  }
+  const [showHelp, setShowHelp] = useState(false)
 
   return (
     <div className="min-h-dvh bg-bg-primary">
@@ -43,10 +33,19 @@ export default function App() {
                 </div>
               </button>
 
-              {/* Feature label — display only, not interactive */}
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-bg-elevated border border-border-subtle">
-                <span className="text-sm">🇪🇸</span>
-                <span className="text-xs font-medium text-text-secondary">Spanish</span>
+              {/* Right side: feature label + info button */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-bg-elevated border border-border-subtle">
+                  <span className="text-sm">🇪🇸</span>
+                  <span className="text-xs font-medium text-text-secondary">Spanish</span>
+                </div>
+                <button
+                  onClick={() => setShowHelp(true)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-accent press-active transition-colors"
+                  aria-label="Help"
+                >
+                  <Info size={18} />
+                </button>
               </div>
 
             </div>
@@ -83,6 +82,9 @@ export default function App() {
         </nav>
 
       </div>
+
+      {/* Help overlay */}
+      {showHelp && <Onboarding onComplete={() => setShowHelp(false)} />}
     </div>
   )
 }

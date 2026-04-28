@@ -13,7 +13,7 @@ const SCREENS = [
     emoji: '🇪🇸',
     title: 'Your Spanish companion',
     subtitle: 'Built for real moments. In the bar, at the restaurant, on the street.',
-    cta: 'Get started',
+    cta: 'Next',
   },
   {
     id: 'dictionary',
@@ -37,7 +37,7 @@ const SCREENS = [
     emoji: null,
     title: "You're all set",
     subtitle: '14 starter words are already in your dictionary. Add more anytime from the word bank.',
-    cta: "Let's go",
+    cta: 'Done',
   },
 ]
 
