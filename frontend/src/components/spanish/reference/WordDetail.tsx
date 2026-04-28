@@ -103,7 +103,7 @@ export default function WordDetail({ word, onClose, onToggleFavourite, onDelete 
             {/* Copy */}
             <button
               onClick={handleCopy}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold bg-accent/10 border border-accent/20 text-accent press-active hover:bg-accent hover:text-white transition-all duration-200"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold bg-accent/10 border border-accent/20 text-accent press-active hover:bg-accent hover:text-bg-primary transition-all duration-200"
             >
               <Copy size={15} />
               <span>Copy</span>

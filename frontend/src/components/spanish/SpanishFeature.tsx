@@ -1,29 +1,27 @@
-import { useState } from 'react'
 import type { AppMode } from '../../types/spanish'
 import { useWords } from '../../hooks/useWords'
-import ModeToggle from './ModeToggle'
 import ReferenceMode from './reference/ReferenceMode'
 import QuickTapMode from './quicktap/QuickTapMode'
 
-export default function SpanishFeature() {
-  const [mode, setMode] = useState<AppMode>('reference')
+interface Props {
+  activeTab: AppMode
+  onTabChange: (tab: AppMode) => void
+}
+
+export default function SpanishFeature({ activeTab }: Props) {
   const wordState = useWords()
 
   return (
     <div className="flex flex-col h-full">
-      {/* Mode Toggle */}
-      <div className="px-4 pt-3 pb-2">
-        <ModeToggle mode={mode} onModeChange={setMode} />
-      </div>
-
-      {/* Feature content */}
-      <div className="flex-1 overflow-hidden">
-        {mode === 'reference' ? (
-          <ReferenceMode {...wordState} />
-        ) : (
-          <QuickTapMode {...wordState} />
-        )}
-      </div>
+      {activeTab === 'dictionary' && (
+        <ReferenceMode {...wordState} favouritesOnly={false} />
+      )}
+      {activeTab === 'phrasebuilder' && (
+        <QuickTapMode {...wordState} />
+      )}
+      {activeTab === 'favourites' && (
+        <ReferenceMode {...wordState} favouritesOnly={true} />
+      )}
     </div>
   )
 }

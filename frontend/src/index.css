@@ -10,8 +10,8 @@
 
   html {
     font-family: 'Inter', sans-serif;
-    background-color: #0d0d14;
-    color: #f0f0f8;
+    background-color: #08080e;
+    color: #f2f0ea;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -41,7 +41,7 @@
   /* Custom scrollbar for desktop */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #2a2a38 transparent;
+    scrollbar-color: #242435 transparent;
   }
   .scrollbar-thin::-webkit-scrollbar {
     width: 4px;
@@ -51,7 +51,7 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #2a2a38;
+    background-color: #242435;
     border-radius: 2px;
   }
 
@@ -64,16 +64,23 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 
-  /* Glass morphism effect */
+  /* Glass morphism */
   .glass {
-    background: rgba(30, 30, 42, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(21, 21, 32, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Bottom nav glass */
+  .glass-bottom {
+    background: rgba(8, 8, 14, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   /* Gradient text */
   .text-gradient-accent {
-    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    background: linear-gradient(135deg, #d4a843, #e8c56a);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -99,8 +106,8 @@
   .bottom-sheet-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
     z-index: 40;
     animation: fadeIn 0.2s ease-out;
   }
@@ -112,11 +119,11 @@
     transform: translateX(-50%);
     width: 100%;
     max-width: 430px;
-    background: #1e1e2a;
+    background: #151520;
     border-radius: 20px 20px 0 0;
     z-index: 50;
     animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.7);
   }
 
   /* Pill button */
@@ -125,7 +132,7 @@
   }
 
   .pill-btn-active {
-    @apply bg-accent text-white shadow-glow-accent;
+    @apply bg-accent text-bg-primary font-semibold;
   }
 
   .pill-btn-inactive {
@@ -142,9 +149,9 @@
     @apply w-full bg-bg-elevated border border-border-subtle rounded-xl px-4 py-3 text-text-primary placeholder-text-muted focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-all duration-200;
   }
 
-  /* FAB button */
+  /* FAB button — sits above bottom nav */
   .fab {
-    @apply fixed bottom-6 right-4 w-14 h-14 bg-accent rounded-full flex items-center justify-center shadow-glow-accent press-active z-30;
+    @apply fixed bottom-24 right-4 w-14 h-14 bg-accent rounded-full flex items-center justify-center shadow-glow-accent press-active z-30;
   }
 }
 
@@ -162,27 +169,21 @@
 
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 @keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
+  0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
-/* Selection color */
+/* Selection colour */
 ::selection {
-  background-color: rgba(139, 92, 246, 0.3);
-  color: #f0f0f8;
+  background-color: rgba(212, 168, 67, 0.25);
+  color: #f2f0ea;
 }

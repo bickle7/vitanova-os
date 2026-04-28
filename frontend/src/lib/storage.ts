@@ -76,3 +76,13 @@ export function markInitialized(): void {
 export function generateId(): string {
   return `custom_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
 }
+
+const ONBOARDING_KEY = 'vitanova_onboarded'
+
+export function hasCompletedOnboarding(): boolean {
+  return localStorage.getItem(ONBOARDING_KEY) === 'true'
+}
+
+export function markOnboardingComplete(): void {
+  localStorage.setItem(ONBOARDING_KEY, 'true')
+}

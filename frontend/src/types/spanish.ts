@@ -36,6 +36,12 @@ export interface SuffixChip {
   spanish: string
 }
 
+export interface SmartItem {
+  id: string
+  english: string
+  spanish: string
+}
+
 export interface BuiltPhrase {
   spanish: string
   english: string
@@ -49,7 +55,8 @@ export interface QuickTapState {
   builtPhrase: BuiltPhrase
 }
 
-export type AppMode = 'reference' | 'quicktap'
+// Dictionary | Phrase Builder | Favourites
+export type AppMode = 'dictionary' | 'phrasebuilder' | 'favourites'
 
 export type DirectionToggle = 'EN_ES' | 'ES_EN'
 

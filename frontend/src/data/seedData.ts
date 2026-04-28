@@ -176,3 +176,171 @@ export const CONTEXT_CATEGORY_MAP: Record<QuickTapContext, string[]> = {
   hotel: ['hotel'],
   emergencies: ['emergencies'],
 }
+
+// Smart word suggestions per connector — keyed as "context:connector.spanish"
+// These curated phrases flow naturally after the connector
+export interface SmartWord {
+  id: string
+  english: string
+  spanish: string
+}
+
+export const CONNECTOR_SMART_WORDS: Record<string, SmartWord[]> = {
+  // ── EATING & DRINKING ────────────────────────────────────────────────────
+  'eating_drinking:¿Me puede traer...': [
+    { id: 'csw_eat_0', english: 'the bill',        spanish: 'la cuenta' },
+    { id: 'csw_eat_1', english: 'some water',      spanish: 'agua' },
+    { id: 'csw_eat_2', english: 'some bread',      spanish: 'pan' },
+    { id: 'csw_eat_3', english: 'the menu',        spanish: 'la carta' },
+    { id: 'csw_eat_4', english: 'a glass of wine', spanish: 'un vaso de vino' },
+    { id: 'csw_eat_5', english: 'a beer',          spanish: 'una cerveza' },
+    { id: 'csw_eat_6', english: 'a coffee',        spanish: 'un café' },
+    { id: 'csw_eat_7', english: 'some more',       spanish: 'un poco más' },
+  ],
+  'eating_drinking:Quisiera...': [
+    { id: 'csw_eat_8',  english: 'a beer',          spanish: 'una cerveza' },
+    { id: 'csw_eat_9',  english: 'a coffee',        spanish: 'un café' },
+    { id: 'csw_eat_10', english: 'the house wine',  spanish: 'el vino de la casa' },
+    { id: 'csw_eat_11', english: 'a red wine',      spanish: 'un vino tinto' },
+    { id: 'csw_eat_12', english: 'a white wine',    spanish: 'un vino blanco' },
+    { id: 'csw_eat_13', english: 'the menu',        spanish: 'la carta' },
+    { id: 'csw_eat_14', english: 'a table',         spanish: 'una mesa' },
+    { id: 'csw_eat_15', english: 'something to eat', spanish: 'algo de comer' },
+  ],
+  'eating_drinking:¿Tiene...?': [
+    { id: 'csw_eat_16', english: 'a table',                spanish: 'una mesa' },
+    { id: 'csw_eat_17', english: 'a menu in English',      spanish: 'una carta en inglés' },
+    { id: 'csw_eat_18', english: 'a vegetarian option',    spanish: 'una opción vegetariana' },
+    { id: 'csw_eat_19', english: 'still water',            spanish: 'agua sin gas' },
+    { id: 'csw_eat_20', english: 'sparkling water',        spanish: 'agua con gas' },
+    { id: 'csw_eat_21', english: "today's menu",           spanish: 'el menú del día' },
+  ],
+  'eating_drinking:Una mesa para...': [
+    { id: 'csw_eat_22', english: 'one',   spanish: 'uno' },
+    { id: 'csw_eat_23', english: 'two',   spanish: 'dos' },
+    { id: 'csw_eat_24', english: 'three', spanish: 'tres' },
+    { id: 'csw_eat_25', english: 'four',  spanish: 'cuatro' },
+  ],
+  'eating_drinking:Sin...': [
+    { id: 'csw_eat_26', english: 'gluten',  spanish: 'gluten' },
+    { id: 'csw_eat_27', english: 'lactose', spanish: 'lactosa' },
+    { id: 'csw_eat_28', english: 'meat',    spanish: 'carne' },
+    { id: 'csw_eat_29', english: 'spice',   spanish: 'picante' },
+    { id: 'csw_eat_30', english: 'salt',    spanish: 'sal' },
+  ],
+  'eating_drinking:¿Nos puede traer más...?': [
+    { id: 'csw_eat_31', english: 'water',    spanish: 'agua' },
+    { id: 'csw_eat_32', english: 'bread',    spanish: 'pan' },
+    { id: 'csw_eat_33', english: 'wine',     spanish: 'vino' },
+    { id: 'csw_eat_34', english: 'napkins',  spanish: 'servilletas' },
+    { id: 'csw_eat_35', english: 'glasses',  spanish: 'vasos' },
+  ],
+
+  // ── SHOPPING ─────────────────────────────────────────────────────────────
+  'shopping:¿Cuánto cuesta...?': [
+    { id: 'csw_shop_0', english: 'this',             spanish: 'esto' },
+    { id: 'csw_shop_1', english: 'that one',         spanish: 'ése' },
+    { id: 'csw_shop_2', english: 'the large size',   spanish: 'la talla grande' },
+    { id: 'csw_shop_3', english: 'the small size',   spanish: 'la talla pequeña' },
+    { id: 'csw_shop_4', english: 'this dress',       spanish: 'este vestido' },
+    { id: 'csw_shop_5', english: 'these shoes',      spanish: 'estos zapatos' },
+  ],
+  'shopping:¿Tiene...?': [
+    { id: 'csw_shop_6',  english: 'this in blue',    spanish: 'esto en azul' },
+    { id: 'csw_shop_7',  english: 'this in my size', spanish: 'esto en mi talla' },
+    { id: 'csw_shop_8',  english: 'anything cheaper', spanish: 'algo más barato' },
+    { id: 'csw_shop_9',  english: 'size large',      spanish: 'la talla grande' },
+    { id: 'csw_shop_10', english: 'size medium',     spanish: 'la talla mediana' },
+    { id: 'csw_shop_11', english: 'size small',      spanish: 'la talla pequeña' },
+  ],
+  'shopping:Estoy buscando...': [
+    { id: 'csw_shop_12', english: 'a gift',           spanish: 'un regalo' },
+    { id: 'csw_shop_13', english: 'summer clothes',   spanish: 'ropa de verano' },
+    { id: 'csw_shop_14', english: 'souvenirs',        spanish: 'recuerdos' },
+    { id: 'csw_shop_15', english: 'a pharmacy',       spanish: 'una farmacia' },
+    { id: 'csw_shop_16', english: 'the supermarket',  spanish: 'el supermercado' },
+  ],
+  'shopping:¿Puedo probarme...?': [
+    { id: 'csw_shop_17', english: 'this',            spanish: 'esto' },
+    { id: 'csw_shop_18', english: 'these trousers',  spanish: 'estos pantalones' },
+    { id: 'csw_shop_19', english: 'this t-shirt',    spanish: 'esta camiseta' },
+    { id: 'csw_shop_20', english: 'these trainers',  spanish: 'estas zapatillas' },
+    { id: 'csw_shop_21', english: 'this jacket',     spanish: 'esta chaqueta' },
+  ],
+
+  // ── GETTING AROUND ───────────────────────────────────────────────────────
+  'getting_around:¿Dónde está...?': [
+    { id: 'csw_travel_0', english: 'the airport',      spanish: 'el aeropuerto' },
+    { id: 'csw_travel_1', english: 'the train station', spanish: 'la estación de tren' },
+    { id: 'csw_travel_2', english: 'the hotel',        spanish: 'el hotel' },
+    { id: 'csw_travel_3', english: 'the toilet',       spanish: 'el baño' },
+    { id: 'csw_travel_4', english: 'the pharmacy',     spanish: 'la farmacia' },
+    { id: 'csw_travel_5', english: 'the bus stop',     spanish: 'la parada de autobús' },
+    { id: 'csw_travel_6', english: 'the centre',       spanish: 'el centro' },
+    { id: 'csw_travel_7', english: 'the beach',        spanish: 'la playa' },
+  ],
+  'getting_around:Llévame a...': [
+    { id: 'csw_travel_8',  english: 'the airport',    spanish: 'el aeropuerto' },
+    { id: 'csw_travel_9',  english: 'the hotel',      spanish: 'el hotel' },
+    { id: 'csw_travel_10', english: 'this address',   spanish: 'esta dirección' },
+    { id: 'csw_travel_11', english: 'the centre',     spanish: 'el centro' },
+    { id: 'csw_travel_12', english: 'the beach',      spanish: 'la playa' },
+  ],
+  'getting_around:Un billete a...': [
+    { id: 'csw_travel_13', english: 'Madrid',         spanish: 'Madrid' },
+    { id: 'csw_travel_14', english: 'Barcelona',      spanish: 'Barcelona' },
+    { id: 'csw_travel_15', english: 'Valencia',       spanish: 'Valencia' },
+    { id: 'csw_travel_16', english: 'the airport',    spanish: 'el aeropuerto' },
+    { id: 'csw_travel_17', english: 'the centre',     spanish: 'el centro' },
+  ],
+  'getting_around:¿Es este el autobús a...?': [
+    { id: 'csw_travel_18', english: 'the airport',   spanish: 'el aeropuerto' },
+    { id: 'csw_travel_19', english: 'the centre',    spanish: 'el centro' },
+    { id: 'csw_travel_20', english: 'the beach',     spanish: 'la playa' },
+    { id: 'csw_travel_21', english: 'the old town',  spanish: 'el casco antiguo' },
+  ],
+
+  // ── HOTEL ────────────────────────────────────────────────────────────────
+  'hotel:¿Me puede dar...?': [
+    { id: 'csw_hotel_0', english: 'the key',          spanish: 'la llave' },
+    { id: 'csw_hotel_1', english: 'more towels',      spanish: 'más toallas' },
+    { id: 'csw_hotel_2', english: 'the WiFi password', spanish: 'la contraseña del WiFi' },
+    { id: 'csw_hotel_3', english: 'an adaptor',       spanish: 'un adaptador' },
+    { id: 'csw_hotel_4', english: 'more pillows',     spanish: 'más almohadas' },
+    { id: 'csw_hotel_5', english: 'another key card', spanish: 'otra tarjeta llave' },
+  ],
+  'hotel:La habitación necesita...': [
+    { id: 'csw_hotel_6', english: 'cleaning',       spanish: 'limpieza' },
+    { id: 'csw_hotel_7', english: 'new towels',     spanish: 'toallas nuevas' },
+    { id: 'csw_hotel_8', english: 'repair',         spanish: 'reparación' },
+    { id: 'csw_hotel_9', english: 'more hangers',   spanish: 'más perchas' },
+  ],
+
+  // ── EMERGENCIES ──────────────────────────────────────────────────────────
+  'emergencies:Llame a...': [
+    { id: 'csw_emerg_0', english: 'an ambulance',  spanish: 'una ambulancia' },
+    { id: 'csw_emerg_1', english: 'the police',    spanish: 'la policía' },
+    { id: 'csw_emerg_2', english: 'a doctor',      spanish: 'un médico' },
+    { id: 'csw_emerg_3', english: 'my family',     spanish: 'a mi familia' },
+  ],
+  'emergencies:Soy alérgico a...': [
+    { id: 'csw_emerg_4', english: 'nuts',        spanish: 'los frutos secos' },
+    { id: 'csw_emerg_5', english: 'seafood',     spanish: 'el marisco' },
+    { id: 'csw_emerg_6', english: 'gluten',      spanish: 'el gluten' },
+    { id: 'csw_emerg_7', english: 'lactose',     spanish: 'la lactosa' },
+    { id: 'csw_emerg_8', english: 'penicillin',  spanish: 'la penicilina' },
+  ],
+  'emergencies:He perdido mi...': [
+    { id: 'csw_emerg_9',  english: 'passport',      spanish: 'pasaporte' },
+    { id: 'csw_emerg_10', english: 'wallet',         spanish: 'cartera' },
+    { id: 'csw_emerg_11', english: 'phone',          spanish: 'teléfono' },
+    { id: 'csw_emerg_12', english: 'bag',            spanish: 'bolso' },
+    { id: 'csw_emerg_13', english: 'credit card',    spanish: 'tarjeta de crédito' },
+  ],
+  'emergencies:¿Dónde está el... más cercano?': [
+    { id: 'csw_emerg_14', english: 'hospital',        spanish: 'hospital' },
+    { id: 'csw_emerg_15', english: 'pharmacy',        spanish: 'farmacia' },
+    { id: 'csw_emerg_16', english: 'police station',  spanish: 'comisaría de policía' },
+    { id: 'csw_emerg_17', english: 'ATM',             spanish: 'cajero automático' },
+  ],
+}

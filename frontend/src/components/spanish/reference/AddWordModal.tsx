@@ -142,7 +142,7 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
           <button
             type="submit"
             disabled={!english.trim() || !spanish.trim()}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-accent text-white font-semibold text-sm press-active shadow-glow-accent disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-accent text-bg-primary font-semibold text-sm press-active shadow-glow-accent disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
           >
             <Plus size={16} />
             Save Word
