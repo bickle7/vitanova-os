@@ -152,6 +152,8 @@
   /* FAB button — sits above bottom nav */
   .fab {
     @apply fixed bottom-24 right-4 w-14 h-14 bg-accent rounded-full flex items-center justify-center shadow-glow-accent press-active z-30;
+    touch-action: manipulation;
+    cursor: pointer;
   }
 }
 

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Briefcase, User, Home, X } from 'lucide-react'
+import { Briefcase, User, Home, X, Plus } from 'lucide-react'
 import clsx from 'clsx'
 import type { LongTermTask, ListCategory, Priority } from '../../../types/todo'
+import { addCustomList } from '../../../lib/todoStorage'
 
 interface Props {
   onClose: () => void
@@ -12,9 +13,11 @@ interface Props {
     dueDate?: string
   }) => void
   initialValues?: LongTermTask
+  customLists?: string[]
+  onCustomListAdded?: (lists: string[]) => void
 }
 
-const categoryOptions: { value: ListCategory; label: string; Icon: React.ElementType }[] = [
+const BUILT_IN_CATEGORIES: { value: string; label: string; Icon: React.ElementType }[] = [
   { value: 'work',     label: 'Work',     Icon: Briefcase },
   { value: 'personal', label: 'Personal', Icon: User },
   { value: 'home',     label: 'Home',     Icon: Home },
@@ -26,11 +29,13 @@ const priorityOptions: { value: Priority; label: string; activeClass: string }[]
   { value: 'low',    label: 'Low',    activeClass: 'bg-bg-elevated text-text-secondary border-border-subtle' },
 ]
 
-export default function AddTaskModal({ onClose, onSave, initialValues }: Props) {
+export default function AddTaskModal({ onClose, onSave, initialValues, customLists = [], onCustomListAdded }: Props) {
   const [title, setTitle] = useState(initialValues?.title ?? '')
   const [category, setCategory] = useState<ListCategory>(initialValues?.listCategory ?? 'personal')
   const [priority, setPriority] = useState<Priority>(initialValues?.priority ?? 'medium')
   const [dueDate, setDueDate] = useState(initialValues?.dueDate ?? '')
+  const [showNewList, setShowNewList] = useState(false)
+  const [newListName, setNewListName] = useState('')
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -54,6 +59,16 @@ export default function AddTaskModal({ onClose, onSave, initialValues }: Props) 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSave()
     if (e.key === 'Escape') onClose()
+  }
+
+  const handleAddNewList = () => {
+    const name = newListName.trim()
+    if (!name) return
+    const updated = addCustomList(name)
+    onCustomListAdded?.(updated)
+    setCategory(name)
+    setNewListName('')
+    setShowNewList(false)
   }
 
   return (
@@ -93,13 +108,13 @@ export default function AddTaskModal({ onClose, onSave, initialValues }: Props) 
           {/* Category */}
           <div>
             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2.5">Category</p>
-            <div className="flex gap-2">
-              {categoryOptions.map(({ value, label, Icon }) => (
+            <div className="flex flex-wrap gap-2">
+              {BUILT_IN_CATEGORIES.map(({ value, label, Icon }) => (
                 <button
                   key={value}
                   onClick={() => setCategory(value)}
                   className={clsx(
-                    'pill-btn flex items-center gap-1.5 flex-1 justify-center',
+                    'pill-btn flex items-center gap-1.5 justify-center',
                     category === value ? 'pill-btn-active' : 'pill-btn-inactive'
                   )}
                 >
@@ -107,7 +122,46 @@ export default function AddTaskModal({ onClose, onSave, initialValues }: Props) 
                   {label}
                 </button>
               ))}
+              {customLists.map(name => (
+                <button
+                  key={name}
+                  onClick={() => setCategory(name)}
+                  className={clsx(
+                    'pill-btn justify-center',
+                    category === name ? 'pill-btn-active' : 'pill-btn-inactive'
+                  )}
+                >
+                  {name}
+                </button>
+              ))}
+              <button
+                onClick={() => setShowNewList(v => !v)}
+                className="pill-btn pill-btn-inactive flex items-center gap-1"
+              >
+                <Plus size={12} />
+                New list
+              </button>
             </div>
+            {showNewList && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  autoFocus
+                  type="text"
+                  value={newListName}
+                  onChange={e => setNewListName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddNewList(); if (e.key === 'Escape') { setShowNewList(false); setNewListName('') } }}
+                  placeholder="List name..."
+                  className="input-base text-sm flex-1 py-2"
+                />
+                <button
+                  onClick={handleAddNewList}
+                  disabled={!newListName.trim()}
+                  className="px-4 py-2 rounded-xl bg-accent text-bg-primary text-sm font-semibold disabled:opacity-40 press-active"
+                >
+                  Add
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Priority */}
@@ -136,12 +190,24 @@ export default function AddTaskModal({ onClose, onSave, initialValues }: Props) 
             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2.5">
               Due date <span className="normal-case font-normal">(optional)</span>
             </p>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
-              className="input-base [color-scheme:dark]"
-            />
+            <div className="flex gap-2 items-center">
+              <input
+                type="date"
+                value={dueDate}
+                onChange={e => setDueDate(e.target.value)}
+                className="input-base [color-scheme:dark] flex-1"
+              />
+              {dueDate && (
+                <button
+                  type="button"
+                  onClick={() => setDueDate('')}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-text-muted hover:text-red-400 bg-bg-elevated border border-border-subtle press-active transition-colors flex-shrink-0"
+                  aria-label="Clear due date"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Save button */}

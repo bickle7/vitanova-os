@@ -1,4 +1,4 @@
-import type { Word } from '../types/spanish'
+import type { Word, SavedPhrase } from '../types/spanish'
 
 const STORAGE_KEY = 'vitanova_spanish_words'
 const VERSION_KEY = 'vitanova_storage_version'
@@ -85,4 +85,31 @@ export function hasCompletedOnboarding(): boolean {
 
 export function markOnboardingComplete(): void {
   localStorage.setItem(ONBOARDING_KEY, 'true')
+}
+
+// ─── Saved Phrases ─────────────────────────────────────────────────────────
+
+const SAVED_PHRASES_KEY = 'vitanova_saved_phrases'
+
+export function getSavedPhrases(): SavedPhrase[] {
+  try {
+    const raw = localStorage.getItem(SAVED_PHRASES_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as SavedPhrase[]
+  } catch {
+    return []
+  }
+}
+
+export function addSavedPhrase(phrase: SavedPhrase): SavedPhrase[] {
+  const phrases = getSavedPhrases()
+  const updated = [phrase, ...phrases]
+  localStorage.setItem(SAVED_PHRASES_KEY, JSON.stringify(updated))
+  return updated
+}
+
+export function deleteSavedPhrase(id: string): SavedPhrase[] {
+  const updated = getSavedPhrases().filter(p => p.id !== id)
+  localStorage.setItem(SAVED_PHRASES_KEY, JSON.stringify(updated))
+  return updated
 }

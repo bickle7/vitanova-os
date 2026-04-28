@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Trash2, Check, Mic, Upload, X, ArrowRight, SkipForward } from 'lucide-react'
+import { Trash2, Check, Mic, MicOff, Upload, X, ArrowRight, SkipForward } from 'lucide-react'
 import clsx from 'clsx'
 import type { DailyTask, ListCategory, Priority } from '../../../types/todo'
 import ImportModal from './ImportModal'
@@ -68,7 +68,7 @@ export default function DailyDump({
   const [movePriority, setMovePriority] = useState<Priority>('medium')
 
   const inputRef = useRef<HTMLInputElement>(null)
-
+  const recognitionRef = useRef<any>(null)
 
   const handleAdd = () => {
     const trimmed = inputValue.trim()
@@ -82,6 +82,14 @@ export default function DailyDump({
   }
 
   const handleVoice = () => {
+    // If already listening, stop
+    if (listening) {
+      recognitionRef.current?.stop()
+      recognitionRef.current = null
+      setListening(false)
+      return
+    }
+
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRec) {
       inputRef.current?.focus()
@@ -95,9 +103,17 @@ export default function DailyDump({
       const text = e.results[0][0].transcript
       addTask(text)
       setListening(false)
+      recognitionRef.current = null
     }
-    recognition.onerror = () => setListening(false)
-    recognition.onend = () => setListening(false)
+    recognition.onerror = () => {
+      setListening(false)
+      recognitionRef.current = null
+    }
+    recognition.onend = () => {
+      setListening(false)
+      recognitionRef.current = null
+    }
+    recognitionRef.current = recognition
     recognition.start()
     setListening(true)
   }
@@ -268,28 +284,27 @@ export default function DailyDump({
             </div>
           </div>
 
-          {/* Mic button */}
+          {/* Mic button — tap to start, tap again to stop */}
           <button
             onClick={handleVoice}
-            disabled={listening}
             className={clsx(
               'w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 press-active',
               listening
-                ? 'bg-accent shadow-glow-accent animate-pulse'
+                ? 'bg-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)] animate-pulse'
                 : 'bg-bg-elevated border border-border-subtle text-text-secondary hover:border-accent/40 hover:text-accent'
             )}
-            aria-label={listening ? 'Listening...' : 'Voice input'}
+            aria-label={listening ? 'Stop recording' : 'Start voice input'}
           >
-            <Mic
-              size={18}
-              className={listening ? 'text-bg-primary' : ''}
-            />
+            {listening
+              ? <MicOff size={18} className="text-white" />
+              : <Mic size={18} />
+            }
           </button>
         </div>
 
         {listening && (
-          <p className="text-xs text-accent mt-2 text-center font-medium animate-pulse">
-            Listening...
+          <p className="text-xs text-red-400 mt-2 text-center font-medium animate-pulse">
+            Recording... tap mic to stop
           </p>
         )}
       </div>

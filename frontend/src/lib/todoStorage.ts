@@ -28,6 +28,8 @@ export function addLongTermTask(task: LongTermTask): LongTermTask[] {
   if (tasks.find(t => t.id === task.id)) return tasks
   const updated = [task, ...tasks]
   saveLongTermTasks(updated)
+  // Notify other hook instances (e.g. after moveToLongTerm from DailyDump)
+  window.dispatchEvent(new CustomEvent('vitanova:longtermtasks:changed'))
   return updated
 }
 
@@ -108,6 +110,35 @@ export function toggleDailyTaskComplete(id: string): DailyTask[] {
     t.id === id ? { ...t, completed: !t.completed } : t
   )
   saveDailyTasks(updated)
+  return updated
+}
+
+// ─── Custom Lists ──────────────────────────────────────────────────────────
+
+const CUSTOM_LISTS_KEY = 'vitanova_custom_lists'
+
+export function getCustomLists(): string[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_LISTS_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as string[]
+  } catch {
+    return []
+  }
+}
+
+export function addCustomList(name: string): string[] {
+  const lists = getCustomLists()
+  const trimmed = name.trim()
+  if (!trimmed || lists.includes(trimmed)) return lists
+  const updated = [...lists, trimmed]
+  localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(updated))
+  return updated
+}
+
+export function deleteCustomList(name: string): string[] {
+  const updated = getCustomLists().filter(l => l !== name)
+  localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(updated))
   return updated
 }
 

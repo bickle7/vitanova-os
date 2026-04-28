@@ -56,11 +56,15 @@ export function sortLongTermTasks(tasks: LongTermTask[]): LongTermTask[] {
 export function useTodoLists() {
   const [tasks, setTasks] = useState<LongTermTask[]>(() => getLongTermTasks())
 
-  // Sync from storage on focus (multi-tab support)
+  // Sync from storage on focus (multi-tab) and on cross-hook updates (moveToLongTerm)
   useEffect(() => {
-    const handleFocus = () => setTasks(getLongTermTasks())
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
+    const refresh = () => setTasks(getLongTermTasks())
+    window.addEventListener('focus', refresh)
+    window.addEventListener('vitanova:longtermtasks:changed', refresh)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('vitanova:longtermtasks:changed', refresh)
+    }
   }, [])
 
   const addTask = useCallback((params: {

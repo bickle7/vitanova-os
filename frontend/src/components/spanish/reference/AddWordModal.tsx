@@ -1,7 +1,13 @@
 import { useState } from 'react'
-import { X, Plus } from 'lucide-react'
+import { X, Plus, Sparkles, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import Anthropic from '@anthropic-ai/sdk'
 import type { Category } from '../../../types/spanish'
+
+const anthropic = new Anthropic({
+  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY ?? '',
+  dangerouslyAllowBrowser: true,
+})
 
 const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
   { id: 'greetings', label: 'Greetings', emoji: '👋' },
@@ -29,6 +35,30 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
   const [spanish, setSpanish] = useState('')
   const [pronunciation, setPronunciation] = useState('')
   const [category, setCategory] = useState<Category>('general')
+  const [translating, setTranslating] = useState(false)
+
+  const handleAutoTranslate = async () => {
+    if (!english.trim() || !import.meta.env.VITE_ANTHROPIC_API_KEY) return
+    setTranslating(true)
+    try {
+      const message = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 100,
+        messages: [{
+          role: 'user',
+          content: `Translate "${english.trim()}" from English to Spanish. Reply in JSON only: {"spanish":"...","pronunciation":"..."}. Pronunciation should be a simple phonetic guide for English speakers (e.g. "la PLA-ya").`,
+        }],
+      })
+      const text = (message.content[0] as { type: string; text: string }).text
+      const parsed = JSON.parse(text)
+      if (parsed.spanish) setSpanish(parsed.spanish)
+      if (parsed.pronunciation) setPronunciation(parsed.pronunciation)
+    } catch {
+      toast.error('Translation failed')
+    } finally {
+      setTranslating(false)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,9 +116,25 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
 
           {/* Spanish */}
           <div>
-            <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-              Spanish
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider">
+                Spanish
+              </label>
+              {import.meta.env.VITE_ANTHROPIC_API_KEY && (
+                <button
+                  type="button"
+                  onClick={handleAutoTranslate}
+                  disabled={!english.trim() || translating}
+                  className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-accent-warm disabled:opacity-40 press-active transition-colors"
+                >
+                  {translating
+                    ? <Loader2 size={11} className="animate-spin" />
+                    : <Sparkles size={11} />
+                  }
+                  {translating ? 'Translating...' : 'Suggest'}
+                </button>
+              )}
+            </div>
             <input
               type="text"
               value={spanish}

@@ -211,7 +211,7 @@ export default function ReferenceMode({
         </div>
       )}
 
-      {/* Search + Direction toggle */}
+      {/* Search + Direction toggle + Word bank shortcut */}
       {!favouritesOnly && (
         <div className="px-4 pt-3 pb-3 flex gap-2 flex-shrink-0">
           <div className="relative flex-1">
@@ -231,6 +231,16 @@ export default function ReferenceMode({
             <ArrowLeftRight size={13} />
             <span>{direction === 'EN_ES' ? 'EN→ES' : 'ES→EN'}</span>
           </button>
+          {discoveryWords.length > 0 && (
+            <button
+              onClick={() => setShowDiscovery(true)}
+              className="flex items-center justify-center w-10 bg-bg-elevated border border-border-subtle rounded-xl text-text-secondary hover:border-accent/40 hover:text-accent press-active transition-all duration-200 flex-shrink-0"
+              aria-label="Browse word bank"
+              title="Browse word bank"
+            >
+              <Compass size={15} />
+            </button>
+          )}
         </div>
       )}
 

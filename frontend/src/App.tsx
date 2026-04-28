@@ -10,6 +10,7 @@ import { addDailyTask as storageAddDailyTask } from './lib/todoStorage'
 import SpanishFeature from './components/spanish/SpanishFeature'
 import TodoFeature from './components/todo/TodoFeature'
 import Onboarding from './components/Onboarding'
+import TodoHelp from './components/todo/TodoHelp'
 
 type ActiveFeature = 'spanish' | 'todo'
 
@@ -168,10 +169,13 @@ export default function App() {
 
       </div>
 
-      {/* Help overlay */}
+      {/* Help overlay — feature-specific */}
       {showHelp && (
         <div className="fixed inset-0 z-50">
-          <Onboarding onComplete={() => setShowHelp(false)} />
+          {activeFeature === 'todo'
+            ? <TodoHelp onComplete={() => setShowHelp(false)} />
+            : <Onboarding onComplete={() => setShowHelp(false)} />
+          }
         </div>
       )}
     </div>

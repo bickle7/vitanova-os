@@ -47,6 +47,13 @@ export interface BuiltPhrase {
   english: string
 }
 
+export interface SavedPhrase {
+  id: string
+  spanish: string
+  english: string
+  savedAt: string
+}
+
 export interface QuickTapState {
   selectedContext: QuickTapContext
   selectedConnector: Connector | null

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, ChevronDown, ChevronRight, Briefcase, User, Home } from 'lucide-react'
 import clsx from 'clsx'
 import type { LongTermTask, ListCategory } from '../../../types/todo'
 import { sortLongTermTasks } from '../../../hooks/useTodoLists'
+import { getCustomLists } from '../../../lib/todoStorage'
 import TaskCard from './TaskCard'
 import AddTaskModal from './AddTaskModal'
 
@@ -21,25 +22,23 @@ interface Props {
 
 type CategoryFilter = 'all' | ListCategory
 
-const categoryTabs: { value: CategoryFilter; label: string; Icon?: React.ElementType }[] = [
+const BUILT_IN_TABS: { value: string; label: string; Icon?: React.ElementType }[] = [
   { value: 'all',      label: 'All' },
   { value: 'work',     label: 'Work',     Icon: Briefcase },
   { value: 'personal', label: 'Personal', Icon: User },
   { value: 'home',     label: 'Home',     Icon: Home },
 ]
 
-const emptyMessages: Record<CategoryFilter, string> = {
-  all:      'No tasks yet — you\'re all clear!',
-  work:     'No work tasks. Enjoy the breathing room.',
-  personal: 'No personal tasks. Time to think big.',
-  home:     'No home tasks. Looks tidy in here.',
-}
-
 export default function LongTermLists({ tasks, addTask, updateTask, deleteTask, toggleComplete }: Props) {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all')
   const [showModal, setShowModal] = useState(false)
   const [editingTask, setEditingTask] = useState<LongTermTask | undefined>()
   const [completedExpanded, setCompletedExpanded] = useState(false)
+  const [customLists, setCustomLists] = useState<string[]>(() => getCustomLists())
+
+  useEffect(() => {
+    setCustomLists(getCustomLists())
+  }, [showModal])  // refresh when modal opens/closes
 
   const filteredTasks = activeCategory === 'all'
     ? tasks
@@ -78,7 +77,7 @@ export default function LongTermLists({ tasks, addTask, updateTask, deleteTask, 
       {/* Category tabs */}
       <div className="px-4 pt-4 pb-3 flex-shrink-0">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {categoryTabs.map(({ value, label, Icon }) => {
+          {[...BUILT_IN_TABS, ...customLists.map(name => ({ value: name, label: name, Icon: undefined }))].map(({ value, label, Icon }) => {
             const count = countFor(value)
             return (
               <button
@@ -114,7 +113,13 @@ export default function LongTermLists({ tasks, addTask, updateTask, deleteTask, 
             <div className="w-16 h-16 rounded-2xl bg-bg-elevated border border-border-subtle flex items-center justify-center mb-4">
               <Plus size={28} className="text-text-muted" />
             </div>
-            <p className="text-text-secondary font-medium">{emptyMessages[activeCategory]}</p>
+            <p className="text-text-secondary font-medium">
+            {activeCategory === 'all'      ? 'No tasks yet — you\'re all clear!'
+            : activeCategory === 'work'     ? 'No work tasks. Enjoy the breathing room.'
+            : activeCategory === 'personal' ? 'No personal tasks. Time to think big.'
+            : activeCategory === 'home'     ? 'No home tasks. Looks tidy in here.'
+            : `No ${activeCategory} tasks yet.`}
+          </p>
             <p className="text-text-muted text-sm mt-1">Tap + to add your first task</p>
           </div>
         ) : (
@@ -192,6 +197,8 @@ export default function LongTermLists({ tasks, addTask, updateTask, deleteTask, 
           }}
           onSave={handleSave}
           initialValues={editingTask}
+          customLists={customLists}
+          onCustomListAdded={setCustomLists}
         />
       )}
     </div>

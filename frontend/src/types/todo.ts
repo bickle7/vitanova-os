@@ -1,4 +1,4 @@
-export type ListCategory = 'work' | 'personal' | 'home'
+export type ListCategory = string   // built-ins: 'work' | 'personal' | 'home' + custom
 export type Priority = 'high' | 'medium' | 'low'
 
 export interface LongTermTask {
