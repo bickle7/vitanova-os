@@ -135,6 +135,46 @@ app.post('/api/recommendations', async (req, res) => {
   }
 })
 
+// Parse titles — extract clean movie/TV titles from messy pasted text
+app.post('/api/parse-titles', async (req, res) => {
+  const { rawText } = req.body
+  if (!rawText || typeof rawText !== 'string') {
+    return res.status(400).json({ error: 'rawText is required' })
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'AI service not configured' })
+  }
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      messages: [{
+        role: 'user',
+        content: `Extract movie and TV show titles from this text. Rules:
+- SKIP any title wrapped in strikethrough markdown (~~like this~~)
+- SKIP any line that is just a URL
+- Strip trailing notes after a dash or hyphen (e.g. "Old Henry - cowboy film" → "Old Henry")
+- Strip trailing question marks and symbols
+- Each line or comma-separated item may be one title
+- Only include real, recognisable movie or TV show titles
+- Return ONLY a JSON array of clean title strings, nothing else
+
+Text:
+${rawText.trim()}`,
+      }],
+    })
+    const text = (message.content[0] as { type: string; text: string }).text.trim()
+    // Strip markdown code fences if present
+    const jsonText = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
+    const titles = JSON.parse(jsonText)
+    if (!Array.isArray(titles)) throw new Error('Expected array')
+    res.json({ titles: titles.filter((t: unknown) => typeof t === 'string' && t.trim()) })
+  } catch (err) {
+    console.error('Parse titles error:', err)
+    res.status(500).json({ error: 'Failed to parse titles' })
+  }
+})
+
 // 404 handler
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' })

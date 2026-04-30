@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Film, Tv, Sparkles } from 'lucide-react'
+import { Plus, Film, Tv, Sparkles, ListPlus } from 'lucide-react'
 import clsx from 'clsx'
 import type { MediaItem, MediaStatus, MediaType } from '../../../types/library'
 import {
@@ -8,6 +8,7 @@ import {
 import MovieAddModal from './MovieAddModal'
 import MovieDetail from './MovieDetail'
 import RecommendedPage from './RecommendedPage'
+import MovieImportModal from './MovieImportModal'
 
 type FilterStatus = 'all' | MediaStatus
 
@@ -35,6 +36,7 @@ export default function MoviesTab() {
   const [showAdd, setShowAdd]         = useState(false)
   const [detailItem, setDetailItem]   = useState<MediaItem | null>(null)
   const [showRecommended, setShowRecommended] = useState(false)
+  const [showImport, setShowImport]           = useState(false)
 
   const handleAdd = (item: { title: string; type: MediaType; status: MediaStatus }) => {
     setItems(addMediaItem(item))
@@ -56,6 +58,14 @@ export default function MoviesTab() {
 
   const handleAddFromRecommended = (title: string, type: 'movie' | 'tv') => {
     setItems(addMediaItem({ title, type, status: 'watchlist' }))
+  }
+
+  const handleImport = (titles: string[]) => {
+    let updated = items
+    for (const title of titles) {
+      updated = addMediaItem({ title, type: 'movie', status: 'watchlist' })
+    }
+    setItems(updated)
   }
 
   const filteredItems = filter === 'all' ? items : items.filter(i => i.status === filter)
@@ -94,14 +104,24 @@ export default function MoviesTab() {
               )
             })}
           </div>
-          <button
-            onClick={() => setShowRecommended(true)}
-            className="flex-shrink-0 flex items-center gap-1 px-2.5 py-2 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-semibold press-active hover:bg-accent hover:text-bg-primary transition-all"
-            aria-label="Recommended"
-          >
-            <Sparkles size={12} />
-            <span>For You</span>
-          </button>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-bg-elevated border border-border-subtle text-text-secondary text-xs font-semibold press-active hover:border-accent/40 transition-all"
+              aria-label="Import list"
+            >
+              <ListPlus size={12} />
+              <span>Import</span>
+            </button>
+            <button
+              onClick={() => setShowRecommended(true)}
+              className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-semibold press-active hover:bg-accent hover:text-bg-primary transition-all"
+              aria-label="Recommended"
+            >
+              <Sparkles size={12} />
+              <span>For You</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -169,6 +189,12 @@ export default function MoviesTab() {
           mediaItems={items}
           onClose={() => setShowRecommended(false)}
           onAddToLibrary={handleAddFromRecommended}
+        />
+      )}
+      {showImport && (
+        <MovieImportModal
+          onClose={() => setShowImport(false)}
+          onImport={handleImport}
         />
       )}
     </div>
