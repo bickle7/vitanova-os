@@ -2,27 +2,32 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Globe2, BookOpen, MessageSquareDashed, Heart,
   Info, ChevronDown, ListTodo, CalendarDays, Check,
+  Film, Music, MapPin,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { AppMode } from './types/spanish'
 import type { TodoTab } from './types/todo'
+import type { LibraryTab } from './types/library'
 import { addDailyTask as storageAddDailyTask } from './lib/todoStorage'
 import SpanishFeature from './components/spanish/SpanishFeature'
 import TodoFeature from './components/todo/TodoFeature'
+import LibraryFeature from './components/library/LibraryFeature'
 import Onboarding from './components/Onboarding'
 import TodoHelp from './components/todo/TodoHelp'
 
-type ActiveFeature = 'spanish' | 'todo'
+type ActiveFeature = 'spanish' | 'todo' | 'library'
 
 const FEATURES: { id: ActiveFeature; emoji: string; label: string }[] = [
   { id: 'spanish', emoji: '🇪🇸', label: 'Spanish' },
   { id: 'todo',    emoji: '✅',   label: 'To Do'   },
+  { id: 'library', emoji: '📚',   label: 'Library' },
 ]
 
 export default function App() {
   const [activeFeature, setActiveFeature] = useState<ActiveFeature>('spanish')
   const [spanishTab, setSpanishTab]       = useState<AppMode>('dictionary')
   const [todoTab, setTodoTab]             = useState<TodoTab>('lists')
+  const [libraryTab, setLibraryTab]       = useState<LibraryTab>('movies')
   const [showHelp, setShowHelp]           = useState(false)
   const [showFeaturePicker, setShowFeaturePicker] = useState(false)
   const [todayCount, setTodayCount]       = useState(0)
@@ -52,6 +57,7 @@ export default function App() {
 
   const handleLogoTap = () => {
     if (activeFeature === 'spanish') setSpanishTab('dictionary')
+    else if (activeFeature === 'library') setLibraryTab('movies')
     else setTodoTab('lists')
   }
 
@@ -146,6 +152,9 @@ export default function App() {
               onTodayCountChange={setTodayCount}
             />
           )}
+          {activeFeature === 'library' && (
+            <LibraryFeature activeTab={libraryTab} />
+          )}
         </main>
 
         {/* Bottom Navigation */}
@@ -162,6 +171,13 @@ export default function App() {
               <>
                 <NavTab icon={ListTodo}     label="Lists" active={todoTab === 'lists'} onClick={() => setTodoTab('lists')} />
                 <NavTab icon={CalendarDays} label="Today" active={todoTab === 'today'} onClick={() => setTodoTab('today')} badge={todayCount > 0 ? todayCount : undefined} />
+              </>
+            )}
+            {activeFeature === 'library' && (
+              <>
+                <NavTab icon={Film}   label="Movies & TV" active={libraryTab === 'movies'} onClick={() => setLibraryTab('movies')} />
+                <NavTab icon={Music}  label="Music"       active={libraryTab === 'music'}  onClick={() => setLibraryTab('music')} />
+                <NavTab icon={MapPin} label="Places"      active={libraryTab === 'places'} onClick={() => setLibraryTab('places')} />
               </>
             )}
           </div>

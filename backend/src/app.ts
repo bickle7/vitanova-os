@@ -77,6 +77,64 @@ app.delete('/api/words/:id', (req, res) => {
   res.json({ success: true, id })
 })
 
+// Similar titles — AI suggests movies/shows similar to a given title
+app.post('/api/similar', async (req, res) => {
+  const { title, type } = req.body
+  if (!title || typeof title !== 'string') {
+    return res.status(400).json({ error: 'title is required' })
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'AI service not configured' })
+  }
+  const mediaType = type === 'tv' ? 'TV show' : 'movie'
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 400,
+      messages: [{
+        role: 'user',
+        content: `Someone enjoyed the ${mediaType} "${title}". Suggest 5 similar movies or TV shows they would love. Reply in JSON only: {"suggestions": [{"title": "...", "type": "movie or tv", "year": "...", "genre": "...", "reason": "brief one-line reason why it's similar"}]}`,
+      }],
+    })
+    const text = (message.content[0] as { type: string; text: string }).text
+    const parsed = JSON.parse(text)
+    res.json(parsed)
+  } catch (err) {
+    console.error('Similar titles error:', err)
+    res.status(500).json({ error: 'Failed to get suggestions' })
+  }
+})
+
+// Recommendations — Spotify-style AI recs based on watched/favourited history
+app.post('/api/recommendations', async (req, res) => {
+  const { watched, favourites } = req.body as { watched: string[]; favourites: string[] }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'AI service not configured' })
+  }
+  const allTitles = [...(favourites ?? []), ...(watched ?? [])]
+  if (allTitles.length === 0) {
+    return res.status(400).json({ error: 'No watch history provided' })
+  }
+  const favouritesList = favourites?.length ? `Favourites: ${favourites.join(', ')}. ` : ''
+  const watchedList = watched?.length ? `Also watched: ${watched.join(', ')}.` : ''
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 700,
+      messages: [{
+        role: 'user',
+        content: `Based on this person's taste: ${favouritesList}${watchedList} Suggest 8 movies and TV shows they would enjoy. Mix movies and TV shows. For each, reference a specific title from their list in the reason where possible. Reply in JSON only: {"recommendations": [{"title": "...", "type": "movie or tv", "year": "...", "genre": "...", "reason": "Because you watched/loved ..."}]}`,
+      }],
+    })
+    const text = (message.content[0] as { type: string; text: string }).text
+    const parsed = JSON.parse(text)
+    res.json(parsed)
+  } catch (err) {
+    console.error('Recommendations error:', err)
+    res.status(500).json({ error: 'Failed to get recommendations' })
+  }
+})
+
 // 404 handler
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' })
