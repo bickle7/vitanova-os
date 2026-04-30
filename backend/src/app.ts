@@ -1,7 +1,9 @@
 import express from 'express'
 import cors from 'cors'
+import Anthropic from '@anthropic-ai/sdk'
 
 const app = express()
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
 
 // Middleware
 app.use(cors({
@@ -13,6 +15,33 @@ app.use(express.json())
 // Health check
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'vitanova-os-backend', version: '0.1.0' })
+})
+
+// Translation endpoint — called by frontend to avoid exposing API key in browser
+app.post('/api/translate', async (req, res) => {
+  const { english } = req.body
+  if (!english || typeof english !== 'string') {
+    return res.status(400).json({ error: 'english text is required' })
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'Translation service not configured' })
+  }
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 100,
+      messages: [{
+        role: 'user',
+        content: `Translate "${english.trim()}" from English to Spanish. Reply in JSON only: {"spanish":"...","pronunciation":"..."}. Pronunciation should be a simple phonetic guide for English speakers (e.g. "la PLA-ya").`,
+      }],
+    })
+    const text = (message.content[0] as { type: string; text: string }).text
+    const parsed = JSON.parse(text)
+    res.json({ spanish: parsed.spanish ?? '', pronunciation: parsed.pronunciation ?? '' })
+  } catch (err) {
+    console.error('Translation error:', err)
+    res.status(500).json({ error: 'Translation failed' })
+  }
 })
 
 // Spanish vocabulary routes (scaffold - data stored in localStorage for Feature 1)

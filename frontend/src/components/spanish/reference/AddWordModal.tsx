@@ -1,15 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Volume2, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import Anthropic from '@anthropic-ai/sdk'
 import type { Category } from '../../../types/spanish'
 
-const anthropic = new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY ?? '',
-  dangerouslyAllowBrowser: true,
-})
-
-const HAS_API_KEY = !!import.meta.env.VITE_ANTHROPIC_API_KEY
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 
 const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
   { id: 'greetings', label: 'Greetings', emoji: '👋' },
@@ -42,7 +36,6 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (!HAS_API_KEY) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const trimmed = english.trim()
     if (!trimmed) {
@@ -53,21 +46,18 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
     setTranslating(true)
     debounceRef.current = setTimeout(async () => {
       try {
-        const message = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 100,
-          messages: [{
-            role: 'user',
-            content: `Translate "${trimmed}" from English to Spanish. Reply in JSON only: {"spanish":"...","pronunciation":"..."}. Pronunciation should be a simple phonetic guide for English speakers (e.g. "la PLA-ya").`,
-          }],
+        const res = await fetch(`${API_URL}/api/translate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ english: trimmed }),
         })
-        const text = (message.content[0] as { type: string; text: string }).text
-        const parsed = JSON.parse(text)
-        if (parsed.spanish) {
-          setTranslated({ spanish: parsed.spanish, pronunciation: parsed.pronunciation ?? '' })
+        if (!res.ok) throw new Error('Translation failed')
+        const data = await res.json()
+        if (data.spanish) {
+          setTranslated({ spanish: data.spanish, pronunciation: data.pronunciation ?? '' })
         }
       } catch {
-        // silently fail — user can still type manually via fallback
+        // silently fail — user can type manually via fallback inputs
       } finally {
         setTranslating(false)
       }
@@ -76,7 +66,7 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
   }, [english])
 
   const handleSpeak = () => {
-    const text = HAS_API_KEY ? translated?.spanish : spanish.trim()
+    const text = translated?.spanish ?? spanish.trim()
     if (!text || !window.speechSynthesis) return
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'es-ES'
@@ -86,8 +76,8 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const finalSpanish = HAS_API_KEY ? translated?.spanish : spanish.trim()
-    const finalPronunciation = HAS_API_KEY ? translated?.pronunciation : pronunciation.trim()
+    const finalSpanish = translated?.spanish ?? spanish.trim()
+    const finalPronunciation = translated?.pronunciation ?? pronunciation.trim()
     if (!english.trim() || !finalSpanish) {
       toast.error('English and Spanish are required')
       return
@@ -102,7 +92,7 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
     toast.success('Word added!')
   }
 
-  const finalSpanish = HAS_API_KEY ? translated?.spanish : spanish.trim()
+  const finalSpanish = translated?.spanish ?? spanish.trim()
 
   return (
     <div className="bottom-sheet-overlay" onClick={onClose}>
@@ -139,52 +129,50 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
             />
           </div>
 
-          {/* Spanish — auto-translate (API key mode) */}
-          {HAS_API_KEY && (
-            <div>
-              <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-                Spanish
-              </label>
-              <div className="flex items-center gap-2">
-                <div className={`flex-1 min-h-[48px] px-4 py-3 rounded-xl border flex items-center ${
-                  translated ? 'bg-accent/5 border-accent/30' : 'bg-bg-elevated border-border-subtle'
-                }`}>
-                  {translating ? (
-                    <div className="flex items-center gap-2 text-text-muted">
-                      <Loader2 size={14} className="animate-spin" />
-                      <span className="text-sm">Translating...</span>
-                    </div>
-                  ) : translated ? (
-                    <div>
-                      <p className="text-sm font-semibold text-accent">{translated.spanish}</p>
-                      {translated.pronunciation && (
-                        <p className="text-xs text-text-muted mt-0.5">{translated.pronunciation}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-text-muted">Type English above to translate</span>
-                  )}
-                </div>
-                {translated && (
-                  <button
-                    type="button"
-                    onClick={handleSpeak}
-                    className="w-11 h-11 rounded-xl bg-bg-elevated border border-border-subtle flex items-center justify-center text-text-secondary hover:border-accent/40 hover:text-accent press-active transition-all duration-200 flex-shrink-0"
-                    aria-label="Hear pronunciation"
-                  >
-                    <Volume2 size={17} />
-                  </button>
+          {/* Spanish — auto-translated via backend */}
+          <div>
+            <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
+              Spanish
+            </label>
+            <div className="flex items-center gap-2">
+              <div className={`flex-1 min-h-[48px] px-4 py-3 rounded-xl border flex items-center ${
+                translated ? 'bg-accent/5 border-accent/30' : 'bg-bg-elevated border-border-subtle'
+              }`}>
+                {translating ? (
+                  <div className="flex items-center gap-2 text-text-muted">
+                    <Loader2 size={14} className="animate-spin" />
+                    <span className="text-sm">Translating...</span>
+                  </div>
+                ) : translated ? (
+                  <div>
+                    <p className="text-sm font-semibold text-accent">{translated.spanish}</p>
+                    {translated.pronunciation && (
+                      <p className="text-xs text-text-muted mt-0.5">{translated.pronunciation}</p>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm text-text-muted">Type English above to translate</span>
                 )}
               </div>
+              {translated && (
+                <button
+                  type="button"
+                  onClick={handleSpeak}
+                  className="w-11 h-11 rounded-xl bg-bg-elevated border border-border-subtle flex items-center justify-center text-text-secondary hover:border-accent/40 hover:text-accent press-active transition-all duration-200 flex-shrink-0"
+                  aria-label="Hear pronunciation"
+                >
+                  <Volume2 size={17} />
+                </button>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* Manual Spanish + pronunciation fallback */}
-          {!HAS_API_KEY && (
+          {/* Manual Spanish + pronunciation — fallback when translation hasn't returned */}
+          {!translated && !translating && (
             <>
               <div>
                 <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-                  Spanish
+                  Spanish (manual)
                 </label>
                 <input
                   type="text"
@@ -194,18 +182,20 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
                   className="input-base"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-                  Pronunciation <span className="text-text-muted font-normal normal-case">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={pronunciation}
-                  onChange={e => setPronunciation(e.target.value)}
-                  placeholder="e.g. la PLA-ya"
-                  className="input-base"
-                />
-              </div>
+              {spanish.trim() && (
+                <div>
+                  <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
+                    Pronunciation <span className="text-text-muted font-normal normal-case">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={pronunciation}
+                    onChange={e => setPronunciation(e.target.value)}
+                    placeholder="e.g. la PLA-ya"
+                    className="input-base"
+                  />
+                </div>
+              )}
             </>
           )}
 
