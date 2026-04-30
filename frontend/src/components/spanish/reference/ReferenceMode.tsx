@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
-import { Search, ArrowLeftRight, Plus, Compass, Heart } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Search, ArrowLeftRight, Plus, Compass, Heart, X } from 'lucide-react'
 import clsx from 'clsx'
-import type { Word, Category, DirectionToggle } from '../../../types/spanish'
+import type { Word, Category, DirectionToggle, SavedPhrase } from '../../../types/spanish'
 import type { useWords } from '../../../hooks/useWords'
+import { getSavedPhrases, deleteSavedPhrase } from '../../../lib/storage'
 import WordCard from './WordCard'
 import WordDetail from './WordDetail'
 import AddWordModal from './AddWordModal'
@@ -146,6 +147,18 @@ export default function ReferenceMode({
   const [selectedWord, setSelectedWord] = useState<Word | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showDiscovery, setShowDiscovery] = useState(false)
+  const [savedPhrases, setSavedPhrases] = useState<SavedPhrase[]>(() => getSavedPhrases())
+
+  useEffect(() => {
+    const refresh = () => setSavedPhrases(getSavedPhrases())
+    window.addEventListener('focus', refresh)
+    return () => window.removeEventListener('focus', refresh)
+  }, [])
+
+  const handleDeletePhrase = useCallback((id: string) => {
+    deleteSavedPhrase(id)
+    setSavedPhrases(getSavedPhrases())
+  }, [])
 
   const filteredWords = useMemo(() => {
     const filtered = words.filter(word => {
@@ -185,13 +198,8 @@ export default function ReferenceMode({
     incrementUseCount(word.id)
   }
 
-  const emptyMessage = () => {
-    if (search) return { title: 'No results found', body: 'Try a different search term' }
-    if (favouritesOnly) return { title: 'No favourites yet', body: 'Tap the heart on any word to save it here' }
-    return { title: 'No words yet', body: 'Add words using the + button or browse the word bank' }
-  }
-
-  const { title: emptyTitle, body: emptyBody } = emptyMessage()
+  const emptyTitle = search ? 'No results found' : 'No words yet'
+  const emptyBody = search ? 'Try a different search term' : 'Add words using the + button or browse the word bank'
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -278,53 +286,116 @@ export default function ReferenceMode({
         </div>
       )}
 
-      {/* Word list */}
+      {/* Word list / Favourites content */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-4">
-        {filteredWords.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-bg-elevated border border-border-subtle flex items-center justify-center mb-4">
-              <span className="text-3xl">{favouritesOnly ? '🤍' : '📖'}</span>
+        {favouritesOnly ? (
+          <div className="pb-8 space-y-6">
+            {/* Words section */}
+            <div>
+              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <Heart size={10} className="fill-accent text-accent" /> Words
+              </p>
+              {filteredWords.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center bg-bg-elevated rounded-2xl border border-border-subtle">
+                  <span className="text-2xl mb-2">🤍</span>
+                  <p className="text-text-muted text-sm">{search ? 'No results found' : 'No favourited words yet'}</p>
+                  {!search && <p className="text-text-muted text-xs mt-1">Tap the heart on any word to save it here</p>}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredWords.map(word => (
+                    <WordCard
+                      key={word.id}
+                      word={word}
+                      direction={direction}
+                      onTap={handleWordTap}
+                      onToggleFavourite={handleToggleFavourite}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-            <h3 className="text-text-primary font-semibold mb-1">{emptyTitle}</h3>
-            <p className="text-text-muted text-sm max-w-[200px]">{emptyBody}</p>
-            {!search && !favouritesOnly && (
-              <button
-                onClick={() => setShowDiscovery(true)}
-                className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-accent/10 border border-accent/20 rounded-xl text-accent text-sm font-medium press-active hover:bg-accent hover:text-bg-primary transition-all duration-200"
-              >
-                <Compass size={15} />
-                Browse word bank
-              </button>
-            )}
+
+            {/* Phrases section */}
+            <div>
+              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2.5">
+                Phrases
+              </p>
+              {savedPhrases.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center bg-bg-elevated rounded-2xl border border-border-subtle">
+                  <span className="text-2xl mb-2">💬</span>
+                  <p className="text-text-muted text-sm">No saved phrases yet</p>
+                  <p className="text-text-muted text-xs mt-1">Build phrases in the Phrase Builder tab and save them</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {savedPhrases.map(p => (
+                    <div key={p.id} className="card flex items-center gap-2 px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-text-primary leading-snug">{p.spanish}</p>
+                        {p.english && <p className="text-xs text-text-muted mt-0.5">{p.english}</p>}
+                      </div>
+                      <button
+                        onClick={() => handleDeletePhrase(p.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-red-400 press-active transition-colors flex-shrink-0"
+                        aria-label="Delete phrase"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="space-y-2 pb-28">
-            {filteredWords.map(word => (
-              <WordCard
-                key={word.id}
-                word={word}
-                direction={direction}
-                onTap={handleWordTap}
-                onToggleFavourite={handleToggleFavourite}
-              />
-            ))}
+          <>
+            {filteredWords.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-bg-elevated border border-border-subtle flex items-center justify-center mb-4">
+                  <span className="text-3xl">📖</span>
+                </div>
+                <h3 className="text-text-primary font-semibold mb-1">{emptyTitle}</h3>
+                <p className="text-text-muted text-sm max-w-[200px]">{emptyBody}</p>
+                {!search && (
+                  <button
+                    onClick={() => setShowDiscovery(true)}
+                    className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-accent/10 border border-accent/20 rounded-xl text-accent text-sm font-medium press-active hover:bg-accent hover:text-bg-primary transition-all duration-200"
+                  >
+                    <Compass size={15} />
+                    Browse word bank
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2 pb-28">
+                {filteredWords.map(word => (
+                  <WordCard
+                    key={word.id}
+                    word={word}
+                    direction={direction}
+                    onTap={handleWordTap}
+                    onToggleFavourite={handleToggleFavourite}
+                  />
+                ))}
 
-            {/* Discovery section — Dictionary only */}
-            {!favouritesOnly && discoveryWords.length > 0 && (
-              <div className="pt-4 pb-2">
-                <button
-                  onClick={() => setShowDiscovery(true)}
-                  className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl bg-bg-elevated border border-dashed border-border-subtle text-text-secondary hover:border-accent/30 hover:text-accent press-active transition-all duration-200"
-                >
-                  <Compass size={16} />
-                  <span className="text-sm font-medium">Browse & Add Words</span>
-                  <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">
-                    {discoveryWords.length} more
-                  </span>
-                </button>
+                {discoveryWords.length > 0 && (
+                  <div className="pt-4 pb-2">
+                    <button
+                      onClick={() => setShowDiscovery(true)}
+                      className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl bg-bg-elevated border border-dashed border-border-subtle text-text-secondary hover:border-accent/30 hover:text-accent press-active transition-all duration-200"
+                    >
+                      <Compass size={16} />
+                      <span className="text-sm font-medium">Browse & Add Words</span>
+                      <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+                        {discoveryWords.length} more
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 

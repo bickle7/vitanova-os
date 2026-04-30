@@ -1,12 +1,16 @@
-export type ListCategory = string   // built-ins: 'work' | 'personal' | 'home' + custom
-export type Priority = 'high' | 'medium' | 'low'
+export interface TodoList {
+  id: string
+  name: string
+  order: number
+}
 
 export interface LongTermTask {
   id: string
   title: string
-  listCategory: ListCategory
-  priority: Priority
-  dueDate?: string        // ISO date string YYYY-MM-DD
+  listId: string
+  starred: boolean
+  order: number
+  reminderAt?: string     // ISO datetime — fires a notification
   completed: boolean
   completedAt?: string
   createdAt: string

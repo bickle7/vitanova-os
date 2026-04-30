@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import type { TodoTab } from '../../types/todo'
 import { useTodoLists } from '../../hooks/useTodoLists'
 import { useDailyDump } from '../../hooks/useDailyDump'
+import { useReminders } from '../../hooks/useReminders'
 import LongTermLists from './longterm/LongTermLists'
 import DailyDump from './daily/DailyDump'
 
@@ -14,6 +15,7 @@ interface Props {
 export default function TodoFeature({ activeTab, onTodayCountChange }: Props) {
   const todoLists = useTodoLists()
   const dailyDump = useDailyDump()
+  useReminders()
 
   useEffect(() => {
     onTodayCountChange?.(dailyDump.incompleteTodayCount)
@@ -23,11 +25,17 @@ export default function TodoFeature({ activeTab, onTodayCountChange }: Props) {
     <div className="flex flex-col h-full">
       {activeTab === 'lists' && (
         <LongTermLists
+          lists={todoLists.lists}
           tasks={todoLists.tasks}
+          addList={todoLists.addList}
+          renameList={todoLists.renameList}
+          deleteList={todoLists.deleteList}
           addTask={todoLists.addTask}
           updateTask={todoLists.updateTask}
           deleteTask={todoLists.deleteTask}
           toggleComplete={todoLists.toggleComplete}
+          toggleStar={todoLists.toggleStar}
+          reorderTasks={todoLists.reorderTasks}
         />
       )}
       {activeTab === 'today' && (

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { X, Plus, Sparkles, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Volume2, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import Anthropic from '@anthropic-ai/sdk'
 import type { Category } from '../../../types/spanish'
@@ -8,6 +8,8 @@ const anthropic = new Anthropic({
   apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY ?? '',
   dangerouslyAllowBrowser: true,
 })
+
+const HAS_API_KEY = !!import.meta.env.VITE_ANTHROPIC_API_KEY
 
 const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
   { id: 'greetings', label: 'Greetings', emoji: '👋' },
@@ -36,52 +38,75 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
   const [pronunciation, setPronunciation] = useState('')
   const [category, setCategory] = useState<Category>('general')
   const [translating, setTranslating] = useState(false)
+  const [translated, setTranslated] = useState<{ spanish: string; pronunciation: string } | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handleAutoTranslate = async () => {
-    if (!english.trim() || !import.meta.env.VITE_ANTHROPIC_API_KEY) return
-    setTranslating(true)
-    try {
-      const message = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 100,
-        messages: [{
-          role: 'user',
-          content: `Translate "${english.trim()}" from English to Spanish. Reply in JSON only: {"spanish":"...","pronunciation":"..."}. Pronunciation should be a simple phonetic guide for English speakers (e.g. "la PLA-ya").`,
-        }],
-      })
-      const text = (message.content[0] as { type: string; text: string }).text
-      const parsed = JSON.parse(text)
-      if (parsed.spanish) setSpanish(parsed.spanish)
-      if (parsed.pronunciation) setPronunciation(parsed.pronunciation)
-    } catch {
-      toast.error('Translation failed')
-    } finally {
+  useEffect(() => {
+    if (!HAS_API_KEY) return
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const trimmed = english.trim()
+    if (!trimmed) {
+      setTranslated(null)
       setTranslating(false)
+      return
     }
+    setTranslating(true)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const message = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 100,
+          messages: [{
+            role: 'user',
+            content: `Translate "${trimmed}" from English to Spanish. Reply in JSON only: {"spanish":"...","pronunciation":"..."}. Pronunciation should be a simple phonetic guide for English speakers (e.g. "la PLA-ya").`,
+          }],
+        })
+        const text = (message.content[0] as { type: string; text: string }).text
+        const parsed = JSON.parse(text)
+        if (parsed.spanish) {
+          setTranslated({ spanish: parsed.spanish, pronunciation: parsed.pronunciation ?? '' })
+        }
+      } catch {
+        // silently fail — user can still type manually via fallback
+      } finally {
+        setTranslating(false)
+      }
+    }, 800)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [english])
+
+  const handleSpeak = () => {
+    const text = HAS_API_KEY ? translated?.spanish : spanish.trim()
+    if (!text || !window.speechSynthesis) return
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'es-ES'
+    utterance.rate = 0.85
+    window.speechSynthesis.speak(utterance)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!english.trim() || !spanish.trim()) {
+    const finalSpanish = HAS_API_KEY ? translated?.spanish : spanish.trim()
+    const finalPronunciation = HAS_API_KEY ? translated?.pronunciation : pronunciation.trim()
+    if (!english.trim() || !finalSpanish) {
       toast.error('English and Spanish are required')
       return
     }
     onAdd({
       english: english.trim(),
-      spanish: spanish.trim(),
+      spanish: finalSpanish,
       category,
-      pronunciation: pronunciation.trim() || undefined,
+      pronunciation: finalPronunciation || undefined,
       source: 'custom',
     })
     toast.success('Word added!')
   }
 
+  const finalSpanish = HAS_API_KEY ? translated?.spanish : spanish.trim()
+
   return (
     <div className="bottom-sheet-overlay" onClick={onClose}>
-      <div
-        className="bottom-sheet pb-safe"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="bottom-sheet pb-safe" onClick={e => e.stopPropagation()}>
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 bg-border-subtle rounded-full" />
@@ -114,49 +139,75 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
             />
           </div>
 
-          {/* Spanish */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider">
+          {/* Spanish — auto-translate (API key mode) */}
+          {HAS_API_KEY && (
+            <div>
+              <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
                 Spanish
               </label>
-              {import.meta.env.VITE_ANTHROPIC_API_KEY && (
-                <button
-                  type="button"
-                  onClick={handleAutoTranslate}
-                  disabled={!english.trim() || translating}
-                  className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-accent-warm disabled:opacity-40 press-active transition-colors"
-                >
-                  {translating
-                    ? <Loader2 size={11} className="animate-spin" />
-                    : <Sparkles size={11} />
-                  }
-                  {translating ? 'Translating...' : 'Suggest'}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                <div className={`flex-1 min-h-[48px] px-4 py-3 rounded-xl border flex items-center ${
+                  translated ? 'bg-accent/5 border-accent/30' : 'bg-bg-elevated border-border-subtle'
+                }`}>
+                  {translating ? (
+                    <div className="flex items-center gap-2 text-text-muted">
+                      <Loader2 size={14} className="animate-spin" />
+                      <span className="text-sm">Translating...</span>
+                    </div>
+                  ) : translated ? (
+                    <div>
+                      <p className="text-sm font-semibold text-accent">{translated.spanish}</p>
+                      {translated.pronunciation && (
+                        <p className="text-xs text-text-muted mt-0.5">{translated.pronunciation}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-text-muted">Type English above to translate</span>
+                  )}
+                </div>
+                {translated && (
+                  <button
+                    type="button"
+                    onClick={handleSpeak}
+                    className="w-11 h-11 rounded-xl bg-bg-elevated border border-border-subtle flex items-center justify-center text-text-secondary hover:border-accent/40 hover:text-accent press-active transition-all duration-200 flex-shrink-0"
+                    aria-label="Hear pronunciation"
+                  >
+                    <Volume2 size={17} />
+                  </button>
+                )}
+              </div>
             </div>
-            <input
-              type="text"
-              value={spanish}
-              onChange={e => setSpanish(e.target.value)}
-              placeholder="e.g. La playa"
-              className="input-base"
-            />
-          </div>
+          )}
 
-          {/* Pronunciation */}
-          <div>
-            <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-              Pronunciation <span className="text-text-muted font-normal normal-case">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={pronunciation}
-              onChange={e => setPronunciation(e.target.value)}
-              placeholder="e.g. la PLA-ya"
-              className="input-base"
-            />
-          </div>
+          {/* Manual Spanish + pronunciation fallback */}
+          {!HAS_API_KEY && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
+                  Spanish
+                </label>
+                <input
+                  type="text"
+                  value={spanish}
+                  onChange={e => setSpanish(e.target.value)}
+                  placeholder="e.g. La playa"
+                  className="input-base"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
+                  Pronunciation <span className="text-text-muted font-normal normal-case">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={pronunciation}
+                  onChange={e => setPronunciation(e.target.value)}
+                  placeholder="e.g. la PLA-ya"
+                  className="input-base"
+                />
+              </div>
+            </>
+          )}
 
           {/* Category */}
           <div>
@@ -169,13 +220,11 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
                   key={cat.id}
                   type="button"
                   onClick={() => setCategory(cat.id)}
-                  className={`
-                    flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium press-active transition-all duration-150 text-left
-                    ${category === cat.id
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium press-active transition-all duration-150 text-left ${
+                    category === cat.id
                       ? 'bg-accent/15 border border-accent/30 text-accent'
                       : 'bg-bg-elevated border border-border-subtle text-text-secondary hover:border-border-subtle/80'
-                    }
-                  `}
+                  }`}
                 >
                   <span>{cat.emoji}</span>
                   <span className="truncate text-xs">{cat.label}</span>
@@ -187,10 +236,9 @@ export default function AddWordModal({ onClose, onAdd }: Props) {
           {/* Submit */}
           <button
             type="submit"
-            disabled={!english.trim() || !spanish.trim()}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-accent text-bg-primary font-semibold text-sm press-active shadow-glow-accent disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+            disabled={!english.trim() || !finalSpanish}
+            className="w-full py-3.5 rounded-2xl bg-accent text-bg-primary font-semibold text-sm press-active shadow-glow-accent disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
           >
-            <Plus size={16} />
             Save Word
           </button>
         </form>

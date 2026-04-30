@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Trash2, Check, Mic, MicOff, Upload, X, ArrowRight, SkipForward } from 'lucide-react'
 import clsx from 'clsx'
-import type { DailyTask, ListCategory, Priority } from '../../../types/todo'
+import type { DailyTask } from '../../../types/todo'
 import ImportModal from './ImportModal'
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
   addTask: (title: string) => DailyTask
   toggleComplete: (id: string) => void
   deleteTask: (id: string) => void
-  moveToLongTerm: (task: DailyTask, category: ListCategory, priority: Priority) => void
+  moveToLongTerm: (task: DailyTask) => void
   clearCompleted: () => void
   clearAll: () => void
   incompleteTodayCount: number
@@ -34,17 +34,6 @@ function dismissToday() {
   localStorage.setItem(DISMISS_KEY, getTodayString())
 }
 
-const categoryOptions: { value: ListCategory; label: string }[] = [
-  { value: 'work',     label: 'Work' },
-  { value: 'personal', label: 'Personal' },
-  { value: 'home',     label: 'Home' },
-]
-
-const priorityOptions: { value: Priority; label: string; activeClass: string }[] = [
-  { value: 'high',   label: 'High',   activeClass: 'bg-red-500 text-white border-red-500' },
-  { value: 'medium', label: 'Medium', activeClass: 'bg-accent text-bg-primary border-accent' },
-  { value: 'low',    label: 'Low',    activeClass: 'bg-bg-elevated text-text-secondary border-border-subtle' },
-]
 
 export default function DailyDump({
   todayTasks,
@@ -64,8 +53,6 @@ export default function DailyDump({
   // Move flow state
   const [movingTasks, setMovingTasks] = useState<DailyTask[] | null>(null)
   const [moveIndex, setMoveIndex] = useState(0)
-  const [moveCategory, setMoveCategory] = useState<ListCategory>('personal')
-  const [movePriority, setMovePriority] = useState<Priority>('medium')
 
   const inputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<any>(null)
@@ -132,14 +119,12 @@ export default function DailyDump({
     if (incomplete.length === 0) return
     setMovingTasks(incomplete)
     setMoveIndex(0)
-    setMoveCategory('personal')
-    setMovePriority('medium')
   }
 
   const handleMoveTask = () => {
     if (!movingTasks) return
     const task = movingTasks[moveIndex]
-    moveToLongTerm(task, moveCategory, movePriority)
+    moveToLongTerm(task)
     advanceMoveFlow()
   }
 
@@ -153,8 +138,6 @@ export default function DailyDump({
       setMovingTasks(null)
     } else {
       setMoveIndex(i => i + 1)
-      setMoveCategory('personal')
-      setMovePriority('medium')
     }
   }
 
@@ -185,47 +168,9 @@ export default function DailyDump({
           <p className="text-base font-medium text-text-primary">{currentTask.title}</p>
         </div>
 
-        <div className="space-y-5">
-          <div>
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2.5">Category</p>
-            <div className="flex gap-2">
-              {categoryOptions.map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setMoveCategory(value)}
-                  className={clsx(
-                    'pill-btn flex-1 justify-center',
-                    moveCategory === value ? 'pill-btn-active' : 'pill-btn-inactive'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
+        <p className="text-sm text-text-secondary text-center">Move this task to List 1?</p>
 
-          <div>
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2.5">Priority</p>
-            <div className="flex gap-2">
-              {priorityOptions.map(({ value, label, activeClass }) => (
-                <button
-                  key={value}
-                  onClick={() => setMovePriority(value)}
-                  className={clsx(
-                    'flex-1 py-2 rounded-full text-sm font-medium border transition-all duration-200 press-active',
-                    movePriority === value
-                      ? activeClass
-                      : 'bg-bg-elevated text-text-secondary border-border-subtle hover:border-accent/40'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 mt-8">
+        <div className="flex gap-3 mt-6">
           <button
             onClick={handleSkipTask}
             className="flex-1 py-3.5 rounded-2xl text-sm font-semibold border border-border-subtle text-text-secondary hover:border-accent/40 transition-colors press-active flex items-center justify-center gap-2"

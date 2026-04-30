@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import type { DailyTask, LongTermTask, ListCategory, Priority } from '../types/todo'
+import type { DailyTask, LongTermTask } from '../types/todo'
 import {
   getDailyTasks,
   saveDailyTasks,
@@ -8,13 +8,14 @@ import {
   deleteDailyTask,
   getTodayDateString,
   generateTodoId,
+  addLongTermTask,
+  getTodoLists,
+  getLongTermTasks,
 } from '../lib/todoStorage'
-import { addLongTermTask } from '../lib/todoStorage'
 
 export function useDailyDump() {
   const [allDailyTasks, setAllDailyTasks] = useState<DailyTask[]>(() => getDailyTasks())
 
-  // Sync on focus
   useEffect(() => {
     const handleFocus = () => setAllDailyTasks(getDailyTasks())
     window.addEventListener('focus', handleFocus)
@@ -47,31 +48,29 @@ export function useDailyDump() {
   }, [])
 
   const toggleComplete = useCallback((id: string) => {
-    const updated = toggleDailyTaskComplete(id)
-    setAllDailyTasks(updated)
+    setAllDailyTasks(toggleDailyTaskComplete(id))
   }, [])
 
   const deleteTask = useCallback((id: string) => {
-    const updated = deleteDailyTask(id)
-    setAllDailyTasks(updated)
+    setAllDailyTasks(deleteDailyTask(id))
   }, [])
 
-  const moveToLongTerm = useCallback((
-    dailyTask: DailyTask,
-    listCategory: ListCategory,
-    priority: Priority
-  ): LongTermTask => {
+  // Move a daily task to the first available long-term list
+  const moveToLongTerm = useCallback((dailyTask: DailyTask): LongTermTask => {
+    const lists = getTodoLists()
+    const targetList = lists[0]
+    const existing = getLongTermTasks().filter(t => t.listId === targetList?.id && !t.completed)
     const longTermTask: LongTermTask = {
       id: generateTodoId(),
       title: dailyTask.title,
-      listCategory,
-      priority,
+      listId: targetList?.id ?? 'default_list_1',
+      starred: false,
+      order: existing.length,
       completed: false,
       createdAt: new Date().toISOString(),
     }
     addLongTermTask(longTermTask)
-    const updated = deleteDailyTask(dailyTask.id)
-    setAllDailyTasks(updated)
+    setAllDailyTasks(deleteDailyTask(dailyTask.id))
     return longTermTask
   }, [])
 

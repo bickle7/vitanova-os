@@ -1,64 +1,41 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { LongTermTask, ListCategory, Priority } from '../types/todo'
+import type { TodoList, LongTermTask } from '../types/todo'
 import {
-  getLongTermTasks,
-  addLongTermTask,
-  updateLongTermTask,
-  deleteLongTermTask,
-  toggleLongTermTaskComplete,
-  generateTodoId,
+  getTodoLists, addTodoList, renameTodoList, deleteTodoList,
+  getLongTermTasks, saveLongTermTasks, addLongTermTask, updateLongTermTask, deleteLongTermTask,
+  toggleLongTermTaskComplete, reorderLongTermTasks, generateTodoId,
 } from '../lib/todoStorage'
 
-// ─── Sort Helper ────────────────────────────────────────────────────────────
+// ─── Sort helper ─────────────────────────────────────────────────────────────
 
-export function sortLongTermTasks(tasks: LongTermTask[]): LongTermTask[] {
-  const priorityOrder: Record<Priority, number> = { high: 0, medium: 1, low: 2 }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
+export function sortTasksForDisplay(tasks: LongTermTask[]): LongTermTask[] {
   const incomplete = tasks.filter(t => !t.completed)
-  const completed = tasks.filter(t => t.completed)
+  const completed  = tasks.filter(t => t.completed)
 
-  incomplete.sort((a, b) => {
-    // Overdue first
-    const aOverdue = a.dueDate ? new Date(a.dueDate + 'T00:00:00') < today : false
-    const bOverdue = b.dueDate ? new Date(b.dueDate + 'T00:00:00') < today : false
-    if (aOverdue && !bOverdue) return -1
-    if (!aOverdue && bOverdue) return 1
-
-    // Then priority
-    const pDiff = priorityOrder[a.priority] - priorityOrder[b.priority]
-    if (pDiff !== 0) return pDiff
-
-    // Then soonest due date
-    if (a.dueDate && b.dueDate) {
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    }
-    if (a.dueDate && !b.dueDate) return -1
-    if (!a.dueDate && b.dueDate) return 1
-
-    // Then creation date (oldest first)
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  })
+  const starred    = incomplete.filter(t => t.starred).sort((a, b) => a.order - b.order)
+  const unstarred  = incomplete.filter(t => !t.starred).sort((a, b) => a.order - b.order)
 
   completed.sort((a, b) => {
     const aAt = a.completedAt ? new Date(a.completedAt).getTime() : 0
     const bAt = b.completedAt ? new Date(b.completedAt).getTime() : 0
-    return bAt - aAt // most recently completed first
+    return bAt - aAt
   })
 
-  return [...incomplete, ...completed]
+  return [...starred, ...unstarred, ...completed]
 }
 
-// ─── Hook ────────────────────────────────────────────────────────────────────
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useTodoLists() {
-  const [tasks, setTasks] = useState<LongTermTask[]>(() => getLongTermTasks())
+  const [lists, setLists]   = useState<TodoList[]>(() => getTodoLists())
+  const [tasks, setTasks]   = useState<LongTermTask[]>(() => getLongTermTasks())
 
-  // Sync from storage on focus (multi-tab) and on cross-hook updates (moveToLongTerm)
+  // Sync on focus + cross-hook changes (DailyDump moveToLongTerm)
   useEffect(() => {
-    const refresh = () => setTasks(getLongTermTasks())
+    const refresh = () => {
+      setLists(getTodoLists())
+      setTasks(getLongTermTasks())
+    }
     window.addEventListener('focus', refresh)
     window.addEventListener('vitanova:longtermtasks:changed', refresh)
     return () => {
@@ -67,46 +44,74 @@ export function useTodoLists() {
     }
   }, [])
 
-  const addTask = useCallback((params: {
-    title: string
-    listCategory: ListCategory
-    priority: Priority
-    dueDate?: string
-  }): LongTermTask => {
+  // ── List operations ──────────────────────────────────────────────────────
+
+  const addList = useCallback((name: string) => {
+    setLists(addTodoList(name))
+  }, [])
+
+  const renameList = useCallback((id: string, name: string) => {
+    setLists(renameTodoList(id, name))
+  }, [])
+
+  const deleteList = useCallback((id: string) => {
+    const remaining = getLongTermTasks().filter(t => t.listId !== id)
+    saveLongTermTasks(remaining)
+    setTasks(remaining)
+    setLists(deleteTodoList(id))
+  }, [])
+
+  // ── Task operations ──────────────────────────────────────────────────────
+
+  const addTask = useCallback((params: { title: string; listId: string }): LongTermTask => {
+    const existingTasks = getLongTermTasks()
+    const listTasks = existingTasks.filter(t => t.listId === params.listId && !t.starred && !t.completed)
     const task: LongTermTask = {
       id: generateTodoId(),
       title: params.title.trim(),
-      listCategory: params.listCategory,
-      priority: params.priority,
-      dueDate: params.dueDate || undefined,
+      listId: params.listId,
+      starred: false,
+      order: listTasks.length,
       completed: false,
       createdAt: new Date().toISOString(),
     }
-    const updated = addLongTermTask(task)
-    setTasks(updated)
+    setTasks(addLongTermTask(task))
     return task
   }, [])
 
   const updateTask = useCallback((id: string, updates: Partial<LongTermTask>) => {
-    const updated = updateLongTermTask(id, updates)
-    setTasks(updated)
+    setTasks(updateLongTermTask(id, updates))
   }, [])
 
   const deleteTask = useCallback((id: string) => {
-    const updated = deleteLongTermTask(id)
-    setTasks(updated)
+    setTasks(deleteLongTermTask(id))
   }, [])
 
   const toggleComplete = useCallback((id: string) => {
-    const updated = toggleLongTermTaskComplete(id)
-    setTasks(updated)
+    setTasks(toggleLongTermTaskComplete(id))
+  }, [])
+
+  const toggleStar = useCallback((id: string) => {
+    const task = getLongTermTasks().find(t => t.id === id)
+    if (!task) return
+    setTasks(updateLongTermTask(id, { starred: !task.starred }))
+  }, [])
+
+  const reorderTasks = useCallback((listId: string, starred: boolean, orderedIds: string[]) => {
+    setTasks(reorderLongTermTasks(listId, starred, orderedIds))
   }, [])
 
   return {
+    lists,
     tasks,
+    addList,
+    renameList,
+    deleteList,
     addTask,
     updateTask,
     deleteTask,
     toggleComplete,
+    toggleStar,
+    reorderTasks,
   }
 }
