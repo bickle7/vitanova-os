@@ -23,9 +23,12 @@ const CATEGORY_FILTERS: { id: Category | 'all'; label: string; emoji: string }[]
   { id: 'greetings',      label: 'Greetings',      emoji: '👋' },
   { id: 'cafe',           label: 'Café',           emoji: '☕' },
   { id: 'restaurant',     label: 'Restaurant',     emoji: '🍽️' },
+  { id: 'bar',            label: 'Bar',            emoji: '🍺' },
   { id: 'shop',           label: 'Shop',           emoji: '🛍️' },
   { id: 'hotel',          label: 'Hotel',          emoji: '🏨' },
   { id: 'getting_around', label: 'Getting Around', emoji: '🧭' },
+  { id: 'health',         label: 'Health',         emoji: '🏥' },
+  { id: 'beach',          label: 'Beach',          emoji: '🏖️' },
   { id: 'emergencies',    label: 'Emergencies',    emoji: '🚨' },
 ]
 

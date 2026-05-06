@@ -6,9 +6,12 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   greetings:     { label: 'Greetings & Basics', color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
   cafe:          { label: 'In a Café',          color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
   restaurant:    { label: 'In a Restaurant',    color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
+  bar:           { label: 'At a Bar',           color: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20' },
   shop:          { label: 'In a Shop',          color: 'text-pink-400 bg-pink-400/10 border-pink-400/20' },
   hotel:         { label: 'In a Hotel',         color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
   getting_around:{ label: 'Getting Around',     color: 'text-sky-400 bg-sky-400/10 border-sky-400/20' },
+  health:        { label: 'Health',             color: 'text-teal-400 bg-teal-400/10 border-teal-400/20' },
+  beach:         { label: 'At the Beach',       color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20' },
   emergencies:   { label: 'Emergencies',        color: 'text-red-400 bg-red-400/10 border-red-400/20' },
   general:       { label: 'General',            color: 'text-text-muted bg-bg-elevated border-border-subtle' },
 }

@@ -6,6 +6,7 @@ import { calcCalorieTarget, saveUserStats } from '../../../lib/fitnessStorage'
 
 interface Props {
   onComplete: (stats: UserStats) => void
+  existingStats?: UserStats | null
 }
 
 const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string }[] = [
@@ -21,14 +22,14 @@ const GOAL_OPTIONS: { id: FitnessGoal; label: string; emoji: string }[] = [
   { id: 'both',        label: 'Both',         emoji: '🏆' },
 ]
 
-export default function OnboardingModal({ onComplete }: Props) {
-  const [age, setAge]               = useState('')
-  const [weight, setWeight]         = useState('')
-  const [height, setHeight]         = useState('')
-  const [sex, setSex]               = useState<'male' | 'female'>('male')
-  const [activityLevel, setActivity] = useState<ActivityLevel>('moderate')
-  const [targetWeight, setTarget]   = useState('')
-  const [goal, setGoal]             = useState<FitnessGoal>('lose_weight')
+export default function OnboardingModal({ onComplete, existingStats }: Props) {
+  const [age, setAge]               = useState(existingStats ? String(existingStats.age) : '')
+  const [weight, setWeight]         = useState(existingStats ? String(existingStats.weight) : '')
+  const [height, setHeight]         = useState(existingStats ? String(existingStats.height) : '')
+  const [sex, setSex]               = useState<'male' | 'female'>(existingStats?.sex ?? 'male')
+  const [activityLevel, setActivity] = useState<ActivityLevel>(existingStats?.activityLevel ?? 'moderate')
+  const [targetWeight, setTarget]   = useState(existingStats ? String(existingStats.targetWeight) : '')
+  const [goal, setGoal]             = useState<FitnessGoal>(existingStats?.goal ?? 'lose_weight')
 
   const canSubmit = age && weight && height && targetWeight &&
     Number(age) > 0 && Number(weight) > 0 && Number(height) > 0 && Number(targetWeight) > 0
@@ -61,9 +62,13 @@ export default function OnboardingModal({ onComplete }: Props) {
           <div className="w-12 h-12 rounded-2xl bg-accent flex items-center justify-center mb-4 shadow-glow-accent">
             <Flame size={22} className="text-bg-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-text-primary">Set up Fitness</h1>
+          <h1 className="text-2xl font-bold text-text-primary">
+            {existingStats ? 'Update Stats' : 'Set up Fitness'}
+          </h1>
           <p className="text-text-muted text-sm mt-1">
-            Your stats help calculate your calorie target and BMR
+            {existingStats
+              ? 'Your previous stats are kept in history'
+              : 'Your stats help calculate your calorie target and BMR'}
           </p>
         </div>
 
@@ -184,7 +189,7 @@ export default function OnboardingModal({ onComplete }: Props) {
           disabled={!canSubmit}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-accent text-bg-primary font-semibold text-sm press-active shadow-glow-accent disabled:opacity-40 transition-all"
         >
-          Get Started <ChevronRight size={16} />
+          {existingStats ? 'Update Stats' : 'Get Started'} <ChevronRight size={16} />
         </button>
       </div>
     </div>

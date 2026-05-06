@@ -2,9 +2,12 @@ export type Category =
   | 'greetings'
   | 'cafe'
   | 'restaurant'
+  | 'bar'
   | 'shop'
   | 'hotel'
   | 'getting_around'
+  | 'health'
+  | 'beach'
   | 'emergencies'
   | 'general'
 
@@ -14,6 +17,11 @@ export type QuickTapContext =
   | 'getting_around'
   | 'hotel'
   | 'emergencies'
+  | 'cafe'
+  | 'bar'
+  | 'doctors'
+  | 'beach'
+  | 'small_talk'
 
 export interface Word {
   id: string

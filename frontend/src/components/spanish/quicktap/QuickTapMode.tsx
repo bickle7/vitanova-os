@@ -8,19 +8,29 @@ import PhraseDisplay from './PhraseDisplay'
 type WordsState = ReturnType<typeof useWords>
 
 const CONTEXT_META: { id: QuickTapContext; label: string; emoji: string }[] = [
-  { id: 'eating_drinking', label: 'Eating & Drinking', emoji: '🍽️' },
+  { id: 'cafe',            label: 'In a Café',         emoji: '☕' },
+  { id: 'eating_drinking', label: 'Restaurant',        emoji: '🍽️' },
+  { id: 'bar',             label: 'At a Bar',          emoji: '🍺' },
   { id: 'shopping',        label: 'Shopping',          emoji: '🛍️' },
-  { id: 'getting_around',  label: 'Getting Around',    emoji: '🗺️' },
   { id: 'hotel',           label: 'Hotel',             emoji: '🏨' },
+  { id: 'getting_around',  label: 'Getting Around',    emoji: '🗺️' },
+  { id: 'beach',           label: 'At the Beach',      emoji: '🏖️' },
+  { id: 'doctors',         label: 'Doctors',           emoji: '🏥' },
   { id: 'emergencies',     label: 'Emergencies',       emoji: '🚨' },
+  { id: 'small_talk',      label: 'Small Talk',        emoji: '💬' },
 ]
 
 const CONTEXT_CATEGORIES: Record<QuickTapContext, string[]> = {
-  eating_drinking: ['eating_drinking'],
-  shopping:        ['shopping'],
-  getting_around:  ['travel_directions'],
+  eating_drinking: ['cafe', 'restaurant'],
+  shopping:        ['shop'],
+  getting_around:  ['getting_around'],
   hotel:           ['hotel'],
   emergencies:     ['emergencies'],
+  cafe:            ['cafe'],
+  bar:             ['bar'],
+  doctors:         ['health', 'emergencies'],
+  beach:           ['beach'],
+  small_talk:      ['greetings'],
 }
 
 function buildPhrase(
@@ -63,7 +73,7 @@ function buildPhrase(
 }
 
 export default function QuickTapMode({ words, incrementUseCount }: WordsState) {
-  const [selectedContext, setSelectedContext] = useState<QuickTapContext>('eating_drinking')
+  const [selectedContext, setSelectedContext] = useState<QuickTapContext>('cafe')
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null)
   const [selectedSmartItems, setSelectedSmartItems] = useState<SmartItem[]>([])
   const [selectedWords, setSelectedWords] = useState<Word[]>([])

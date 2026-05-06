@@ -11,17 +11,23 @@ interface Props {
 }
 
 export default function FitnessFeature({ activeTab }: Props) {
-  const [stats, setStats] = useState<UserStats | null>(() => getUserStats())
+  const [stats, setStats]         = useState<UserStats | null>(() => getUserStats())
+  const [editingStats, setEditingStats] = useState(false)
 
-  if (!stats) {
-    return <OnboardingModal onComplete={setStats} />
+  const handleStatsComplete = (newStats: UserStats) => {
+    setStats(newStats)
+    setEditingStats(false)
+  }
+
+  if (!stats || editingStats) {
+    return <OnboardingModal onComplete={handleStatsComplete} existingStats={stats} />
   }
 
   return (
     <div className="flex flex-col h-full">
-      {activeTab === 'today'    && <TodayTab stats={stats} onEditStats={() => setStats(null)} />}
+      {activeTab === 'today'    && <TodayTab stats={stats} onEditStats={() => setEditingStats(true)} />}
       {activeTab === 'activity' && <ActivityTab />}
-      {activeTab === 'progress' && <ProgressTab stats={stats} />}
+      {activeTab === 'progress' && <ProgressTab stats={stats} onEditStats={() => setEditingStats(true)} />}
     </div>
   )
 }

@@ -9,9 +9,12 @@ const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
   { id: 'greetings',      label: 'Greetings & Basics', emoji: '👋' },
   { id: 'cafe',           label: 'In a Café',           emoji: '☕' },
   { id: 'restaurant',     label: 'In a Restaurant',     emoji: '🍽️' },
+  { id: 'bar',            label: 'At a Bar',            emoji: '🍺' },
   { id: 'shop',           label: 'In a Shop',           emoji: '🛍️' },
   { id: 'hotel',          label: 'In a Hotel',          emoji: '🏨' },
   { id: 'getting_around', label: 'Getting Around',      emoji: '🧭' },
+  { id: 'health',         label: 'Health',              emoji: '🏥' },
+  { id: 'beach',          label: 'At the Beach',        emoji: '🏖️' },
   { id: 'emergencies',    label: 'Emergencies',         emoji: '🚨' },
   { id: 'general',        label: 'General',             emoji: '📝' },
 ]

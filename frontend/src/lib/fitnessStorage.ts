@@ -46,13 +46,24 @@ export function calcCalorieTarget(stats: Omit<UserStats, 'dailyCalorieTarget' | 
 }
 
 // ─── User Stats ───────────────────────────────────────────────────────────────
+// Stored as UserStats[] — newest first. Never overwrites old entries.
 
 export function getUserStats(): UserStats | null {
-  return read<UserStats | null>(STATS_KEY, null)
+  const history = read<UserStats[]>(STATS_KEY, [])
+  // Support legacy single-object format from before v0.7.1
+  if (!Array.isArray(history)) return history as UserStats | null
+  return history[0] ?? null
+}
+
+export function getUserStatsHistory(): UserStats[] {
+  const history = read<UserStats[]>(STATS_KEY, [])
+  if (!Array.isArray(history)) return history ? [history as UserStats] : []
+  return history
 }
 
 export function saveUserStats(stats: UserStats): void {
-  write(STATS_KEY, stats)
+  const history = getUserStatsHistory()
+  write(STATS_KEY, [stats, ...history])
 }
 
 // ─── Food Entries ─────────────────────────────────────────────────────────────
@@ -76,8 +87,11 @@ export function deleteFoodEntry(id: string): FoodEntry[] {
 }
 
 export function getTodayFoodEntries(): FoodEntry[] {
-  const today = todayStr()
-  return getFoodEntries().filter(e => e.date === today)
+  return getFoodEntriesForDate(todayStr())
+}
+
+export function getFoodEntriesForDate(date: string): FoodEntry[] {
+  return getFoodEntries().filter(e => e.date === date)
 }
 
 // ─── Workout Templates ────────────────────────────────────────────────────────
@@ -121,8 +135,11 @@ export function deleteActivityEntry(id: string): ActivityEntry[] {
 }
 
 export function getTodayActivities(): ActivityEntry[] {
-  const today = todayStr()
-  return getActivityEntries().filter(a => a.date === today)
+  return getActivitiesForDate(todayStr())
+}
+
+export function getActivitiesForDate(date: string): ActivityEntry[] {
+  return getActivityEntries().filter(a => a.date === date)
 }
 
 // ─── Weight Entries ───────────────────────────────────────────────────────────
@@ -149,6 +166,19 @@ export function deleteWeightEntry(id: string): WeightEntry[] {
 }
 
 // ─── Weekly stats helpers ─────────────────────────────────────────────────────
+
+export function getCurrentWeekDays(): string[] {
+  // Returns Mon–Sun of the current week (ISO week)
+  const today = new Date()
+  const dow = today.getDay() // 0=Sun, 1=Mon...
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - ((dow + 6) % 7))
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    return d.toISOString().slice(0, 10)
+  })
+}
 
 export function getWeeklyCalories(): { consumed: number; burned: number; deficitDays: number } {
   const days = last7Days()

@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import type { UserStats, WeightEntry } from '../../../types/fitness'
 import {
   getWeightEntries, getWeeklyCalories, getDeficitStreak, calcBMR,
+  getCurrentWeekDays, getFoodEntriesForDate,
 } from '../../../lib/fitnessStorage'
 import WeightLogModal from './WeightLogModal'
 
@@ -11,6 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 
 interface Props {
   stats: UserStats
+  onEditStats: () => void
 }
 
 function fmt(n: number) { return n.toLocaleString() }
@@ -46,15 +48,17 @@ function WeightChart({ entries, target }: { entries: WeightEntry[]; target: numb
   )
 }
 
-export default function ProgressTab({ stats }: Props) {
+export default function ProgressTab({ stats, onEditStats }: Props) {
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>(() => getWeightEntries())
   const [showWeightModal, setShowWeightModal] = useState(false)
   const [summary, setSummary]                 = useState('')
   const [loadingSummary, setLoadingSummary]   = useState(false)
 
-  const weekly    = getWeeklyCalories()
-  const streak    = getDeficitStreak()
-  const bmr       = calcBMR(stats)
+  const weekly      = getWeeklyCalories()
+  const streak      = getDeficitStreak()
+  const bmr         = calcBMR(stats)
+  const weekDays    = getCurrentWeekDays()
+  const today       = new Date().toISOString().slice(0, 10)
   const latestW   = weightEntries[0]?.weight ?? stats.weight
   const weightToLose = Math.max(0, latestW - stats.targetWeight)
   const totalToLose  = Math.max(0.1, stats.weight - stats.targetWeight)
@@ -144,6 +148,45 @@ export default function ProgressTab({ stats }: Props) {
         )}
       </div>
 
+      {/* Week view */}
+      <div className="card px-4 py-3 mb-3">
+        <p className="text-xs font-semibold text-text-secondary mb-3">This Week</p>
+        <div className="grid grid-cols-7 gap-1">
+          {weekDays.map(day => {
+            const dayConsumed = getFoodEntriesForDate(day).reduce((s, e) => s + e.calories, 0)
+            const isToday     = day === today
+            const isFuture    = day > today
+            const hasData     = dayConsumed > 0
+            const overTarget  = hasData && dayConsumed > stats.dailyCalorieTarget
+            const pct         = hasData ? Math.min(100, Math.round((dayConsumed / stats.dailyCalorieTarget) * 100)) : 0
+            const dayLabel    = new Date(day + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 1)
+            return (
+              <div key={day} className="flex flex-col items-center gap-1">
+                <p className={clsx('text-[9px] font-semibold uppercase', isToday ? 'text-accent' : 'text-text-muted')}>{dayLabel}</p>
+                <div className="w-full h-12 bg-bg-elevated rounded-lg overflow-hidden flex flex-col justify-end relative">
+                  {!isFuture && hasData && (
+                    <div
+                      className={clsx('w-full rounded-lg transition-all duration-500', overTarget ? 'bg-red-400' : 'bg-green-400')}
+                      style={{ height: `${Math.max(8, pct)}%` }}
+                    />
+                  )}
+                  {isToday && (
+                    <div className="absolute inset-0 border border-accent/40 rounded-lg pointer-events-none" />
+                  )}
+                </div>
+                <p className={clsx('text-[9px] font-semibold', hasData && !isFuture ? (overTarget ? 'text-red-400' : 'text-green-400') : 'text-text-muted')}>
+                  {hasData && !isFuture ? `${Math.round(dayConsumed / 100) * 100}` : '—'}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+        <div className="flex justify-between mt-2 text-[10px] text-text-muted">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> Under target</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Over target</span>
+        </div>
+      </div>
+
       {/* Weekly calorie stats */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="card px-3 py-3 text-center">
@@ -186,7 +229,12 @@ export default function ProgressTab({ stats }: Props) {
 
       {/* BMR / age benchmarking */}
       <div className="card px-4 py-3 mb-3">
-        <p className="text-xs font-semibold text-text-secondary mb-3">Your Metabolism</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-text-secondary">Your Metabolism</p>
+          <button onClick={onEditStats} className="text-xs text-text-muted hover:text-accent press-active transition-colors">
+            Edit stats
+          </button>
+        </div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm text-text-primary">BMR</p>
           <p className="text-sm font-bold text-accent">{fmt(bmr)} kcal/day</p>

@@ -175,6 +175,48 @@ ${rawText.trim()}`,
   }
 })
 
+// Search food — queries Open Food Facts for branded/common foods, returns calories per serving
+app.get('/api/food-search', async (req, res) => {
+  const q = req.query.q
+  if (!q || typeof q !== 'string' || !q.trim()) {
+    return res.status(400).json({ error: 'q is required' })
+  }
+  try {
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q.trim())}&search_simple=1&action=process&json=1&page_size=8&fields=product_name,brands,nutriments,serving_size,serving_quantity`
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'VitaNovaOS/1.0 (personal fitness app)' },
+    })
+    if (!response.ok) throw new Error('OFF API failed')
+    const data = await response.json() as {
+      products: Array<{
+        product_name?: string
+        brands?: string
+        serving_size?: string
+        nutriments?: { 'energy-kcal_serving'?: number; 'energy-kcal_100g'?: number }
+      }>
+    }
+    const results = (data.products ?? [])
+      .filter(p => p.product_name && p.nutriments)
+      .map(p => {
+        const kcalServing = p.nutriments?.['energy-kcal_serving']
+        const kcal100g    = p.nutriments?.['energy-kcal_100g']
+        const calories    = kcalServing ?? (kcal100g ? Math.round(kcal100g) : null)
+        return {
+          name:        p.product_name ?? '',
+          brand:       p.brands ?? '',
+          servingSize: p.serving_size ?? '100g',
+          calories,
+        }
+      })
+      .filter(r => r.calories != null && r.calories > 0)
+      .slice(0, 6)
+    res.json({ results })
+  } catch (err) {
+    console.error('Food search error:', err)
+    res.status(500).json({ error: 'Failed to search food database' })
+  }
+})
+
 // Estimate calories — AI estimates calories from a natural language food description
 app.post('/api/estimate-calories', async (req, res) => {
   const { description } = req.body

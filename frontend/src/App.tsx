@@ -27,11 +27,21 @@ const FEATURES: { id: ActiveFeature; emoji: string; label: string }[] = [
 ]
 
 export default function App() {
-  const [activeFeature, setActiveFeature] = useState<ActiveFeature>('spanish')
-  const [spanishTab, setSpanishTab]       = useState<AppMode>('dictionary')
-  const [todoTab, setTodoTab]             = useState<TodoTab>('lists')
-  const [libraryTab, setLibraryTab]       = useState<LibraryTab>('movies')
-  const [fitnessTab, setFitnessTab]       = useState<FitnessTab>('today')
+  const [activeFeature, setActiveFeature] = useState<ActiveFeature>(
+    () => (localStorage.getItem('vn_last_feature') as ActiveFeature | null) ?? 'spanish'
+  )
+  const [spanishTab, setSpanishTab]       = useState<AppMode>(
+    () => (localStorage.getItem('vn_last_spanish_tab') as AppMode | null) ?? 'phrasebuilder'
+  )
+  const [todoTab, setTodoTab]             = useState<TodoTab>(
+    () => (localStorage.getItem('vn_last_todo_tab') as TodoTab | null) ?? 'lists'
+  )
+  const [libraryTab, setLibraryTab]       = useState<LibraryTab>(
+    () => (localStorage.getItem('vn_last_library_tab') as LibraryTab | null) ?? 'movies'
+  )
+  const [fitnessTab, setFitnessTab]       = useState<FitnessTab>(
+    () => (localStorage.getItem('vn_last_fitness_tab') as FitnessTab | null) ?? 'today'
+  )
   const [showHelp, setShowHelp]           = useState(false)
   const [showFeaturePicker, setShowFeaturePicker] = useState(false)
   const [todayCount, setTodayCount]       = useState(0)
@@ -56,14 +66,35 @@ export default function App() {
 
   const switchFeature = useCallback((f: ActiveFeature) => {
     setActiveFeature(f)
+    localStorage.setItem('vn_last_feature', f)
     setShowFeaturePicker(false)
   }, [])
 
+  const changeSpanishTab = useCallback((tab: AppMode) => {
+    setSpanishTab(tab)
+    localStorage.setItem('vn_last_spanish_tab', tab)
+  }, [])
+
+  const changeTodoTab = useCallback((tab: TodoTab) => {
+    setTodoTab(tab)
+    localStorage.setItem('vn_last_todo_tab', tab)
+  }, [])
+
+  const changeLibraryTab = useCallback((tab: LibraryTab) => {
+    setLibraryTab(tab)
+    localStorage.setItem('vn_last_library_tab', tab)
+  }, [])
+
+  const changeFitnessTab = useCallback((tab: FitnessTab) => {
+    setFitnessTab(tab)
+    localStorage.setItem('vn_last_fitness_tab', tab)
+  }, [])
+
   const handleLogoTap = () => {
-    if (activeFeature === 'spanish') setSpanishTab('dictionary')
-    else if (activeFeature === 'library') setLibraryTab('movies')
-    else if (activeFeature === 'fitness') setFitnessTab('today')
-    else setTodoTab('lists')
+    if (activeFeature === 'spanish') changeSpanishTab('phrasebuilder')
+    else if (activeFeature === 'library') changeLibraryTab('movies')
+    else if (activeFeature === 'fitness') changeFitnessTab('today')
+    else changeTodoTab('lists')
   }
 
   const currentFeature = FEATURES.find(f => f.id === activeFeature)!
@@ -148,12 +179,12 @@ export default function App() {
         {/* Main Content */}
         <main className="flex-1 overflow-hidden">
           {activeFeature === 'spanish' && (
-            <SpanishFeature activeTab={spanishTab} onTabChange={setSpanishTab} />
+            <SpanishFeature activeTab={spanishTab} onTabChange={changeSpanishTab} />
           )}
           {activeFeature === 'todo' && (
             <TodoFeature
               activeTab={todoTab}
-              onTabChange={setTodoTab}
+              onTabChange={changeTodoTab}
               onTodayCountChange={setTodayCount}
             />
           )}
@@ -170,29 +201,29 @@ export default function App() {
           <div className="flex items-stretch pb-safe">
             {activeFeature === 'spanish' && (
               <>
-                <NavTab icon={BookOpen}           label="Dictionary" active={spanishTab === 'dictionary'}   onClick={() => setSpanishTab('dictionary')} />
-                <NavTab icon={MessageSquareDashed} label="Phrases"    active={spanishTab === 'phrasebuilder'} onClick={() => setSpanishTab('phrasebuilder')} />
-                <NavTab icon={Heart}              label="Favourites" active={spanishTab === 'favourites'}   onClick={() => setSpanishTab('favourites')} />
+                <NavTab icon={MessageSquareDashed} label="Phrases"    active={spanishTab === 'phrasebuilder'} onClick={() => changeSpanishTab('phrasebuilder')} />
+                <NavTab icon={Heart}              label="Favourites" active={spanishTab === 'favourites'}   onClick={() => changeSpanishTab('favourites')} />
+                <NavTab icon={BookOpen}           label="Dictionary" active={spanishTab === 'dictionary'}   onClick={() => changeSpanishTab('dictionary')} />
               </>
             )}
             {activeFeature === 'todo' && (
               <>
-                <NavTab icon={ListTodo}     label="Lists" active={todoTab === 'lists'} onClick={() => setTodoTab('lists')} />
-                <NavTab icon={CalendarDays} label="Today" active={todoTab === 'today'} onClick={() => setTodoTab('today')} badge={todayCount > 0 ? todayCount : undefined} />
+                <NavTab icon={ListTodo}     label="Lists" active={todoTab === 'lists'} onClick={() => changeTodoTab('lists')} />
+                <NavTab icon={CalendarDays} label="Today" active={todoTab === 'today'} onClick={() => changeTodoTab('today')} badge={todayCount > 0 ? todayCount : undefined} />
               </>
             )}
             {activeFeature === 'library' && (
               <>
-                <NavTab icon={Film}   label="Movies & TV" active={libraryTab === 'movies'} onClick={() => setLibraryTab('movies')} />
-                <NavTab icon={Music}  label="Music"       active={libraryTab === 'music'}  onClick={() => setLibraryTab('music')} />
-                <NavTab icon={MapPin} label="Places"      active={libraryTab === 'places'} onClick={() => setLibraryTab('places')} />
+                <NavTab icon={Film}   label="Movies & TV" active={libraryTab === 'movies'} onClick={() => changeLibraryTab('movies')} />
+                <NavTab icon={Music}  label="Music"       active={libraryTab === 'music'}  onClick={() => changeLibraryTab('music')} />
+                <NavTab icon={MapPin} label="Places"      active={libraryTab === 'places'} onClick={() => changeLibraryTab('places')} />
               </>
             )}
             {activeFeature === 'fitness' && (
               <>
-                <NavTab icon={Dumbbell}   label="Today"    active={fitnessTab === 'today'}    onClick={() => setFitnessTab('today')} />
-                <NavTab icon={Activity}   label="Activity"  active={fitnessTab === 'activity'} onClick={() => setFitnessTab('activity')} />
-                <NavTab icon={TrendingUp} label="Progress"  active={fitnessTab === 'progress'} onClick={() => setFitnessTab('progress')} />
+                <NavTab icon={Dumbbell}   label="Today"    active={fitnessTab === 'today'}    onClick={() => changeFitnessTab('today')} />
+                <NavTab icon={Activity}   label="Activity"  active={fitnessTab === 'activity'} onClick={() => changeFitnessTab('activity')} />
+                <NavTab icon={TrendingUp} label="Progress"  active={fitnessTab === 'progress'} onClick={() => changeFitnessTab('progress')} />
               </>
             )}
           </div>
