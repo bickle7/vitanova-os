@@ -12,11 +12,11 @@ import {
   generateId,
   isFirstLoad,
   markInitialized,
+  migrateCategories,
 } from '../lib/storage'
 
 function initializeWords(): Word[] {
   if (isFirstLoad()) {
-    // Pre-populate with starter words from seed bank
     const starterWords = SEED_WORDS.filter(w => STARTER_WORD_IDS.includes(w.id)).map(w => ({
       ...w,
       created_at: new Date().toISOString(),
@@ -25,6 +25,8 @@ function initializeWords(): Word[] {
     markInitialized()
     return starterWords
   }
+  // Run category migration for existing users (old → situational categories)
+  migrateCategories()
   return getWords()
 }
 
@@ -94,6 +96,16 @@ export function useWords() {
     setWords(updated)
   }, [])
 
+  const reorderFavouriteWords = useCallback((orderedIds: string[]) => {
+    const current = getWords()
+    const favMap = new Map(current.filter(w => w.is_favourite).map(w => [w.id, w]))
+    const ordered = orderedIds.map(id => favMap.get(id)).filter(Boolean) as Word[]
+    const nonFavs = current.filter(w => !w.is_favourite)
+    const reordered = [...ordered, ...nonFavs]
+    saveWords(reordered)
+    setWords(reordered)
+  }, [])
+
   const isWordInList = useCallback((wordId: string) => {
     return words.some(w => w.id === wordId)
   }, [words])
@@ -109,6 +121,7 @@ export function useWords() {
     updateWord,
     deleteWord,
     toggleFavourite,
+    reorderFavouriteWords,
     incrementUseCount,
     isWordInList,
   }

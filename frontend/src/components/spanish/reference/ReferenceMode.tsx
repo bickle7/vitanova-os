@@ -1,9 +1,17 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { Search, ArrowLeftRight, Plus, Compass, Heart, X } from 'lucide-react'
+import { Search, ArrowLeftRight, Plus, Compass, Heart, X, GripVertical } from 'lucide-react'
 import clsx from 'clsx'
 import type { Word, Category, DirectionToggle, SavedPhrase } from '../../../types/spanish'
 import type { useWords } from '../../../hooks/useWords'
-import { getSavedPhrases, deleteSavedPhrase } from '../../../lib/storage'
+import { getSavedPhrases, deleteSavedPhrase, reorderSavedPhrases } from '../../../lib/storage'
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor,
+  useSensor, useSensors, DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import WordCard from './WordCard'
 import WordDetail from './WordDetail'
 import AddWordModal from './AddWordModal'
@@ -11,14 +19,87 @@ import AddWordModal from './AddWordModal'
 type WordsState = ReturnType<typeof useWords>
 
 const CATEGORY_FILTERS: { id: Category | 'all'; label: string; emoji: string }[] = [
-  { id: 'all',               label: 'All',              emoji: '📚' },
-  { id: 'greetings',         label: 'Greetings',        emoji: '👋' },
-  { id: 'eating_drinking',   label: 'Eating & Drinking', emoji: '🍽️' },
-  { id: 'travel_directions', label: 'Travel',           emoji: '✈️' },
-  { id: 'shopping',          label: 'Shopping',         emoji: '🛍️' },
-  { id: 'hotel',             label: 'Hotel',            emoji: '🏨' },
-  { id: 'emergencies',       label: 'Emergencies',      emoji: '🚨' },
+  { id: 'all',            label: 'All',            emoji: '📚' },
+  { id: 'greetings',      label: 'Greetings',      emoji: '👋' },
+  { id: 'cafe',           label: 'Café',           emoji: '☕' },
+  { id: 'restaurant',     label: 'Restaurant',     emoji: '🍽️' },
+  { id: 'shop',           label: 'Shop',           emoji: '🛍️' },
+  { id: 'hotel',          label: 'Hotel',          emoji: '🏨' },
+  { id: 'getting_around', label: 'Getting Around', emoji: '🧭' },
+  { id: 'emergencies',    label: 'Emergencies',    emoji: '🚨' },
 ]
+
+// ── Sortable word row (Favourites tab only) ────────────────────────────────
+function SortableWordRow({
+  word, direction, onTap, onToggleFavourite,
+}: {
+  word: Word
+  direction: DirectionToggle
+  onTap: (w: Word) => void
+  onToggleFavourite: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: word.id })
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+      className="flex items-center gap-1"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 w-6 h-8 flex items-center justify-center text-text-muted cursor-grab active:cursor-grabbing touch-none"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical size={14} />
+      </button>
+      <div className="flex-1 min-w-0">
+        <WordCard word={word} direction={direction} onTap={onTap} onToggleFavourite={onToggleFavourite} />
+      </div>
+    </div>
+  )
+}
+
+// ── Sortable phrase row (Favourites tab only) ──────────────────────────────
+function SortablePhraseRow({
+  phrase, onDelete,
+}: {
+  phrase: SavedPhrase
+  onDelete: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: phrase.id })
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+      className="flex items-center gap-1"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 w-6 h-8 flex items-center justify-center text-text-muted cursor-grab active:cursor-grabbing touch-none"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical size={14} />
+      </button>
+      <div className="card flex items-center gap-2 px-3 py-2.5 flex-1 min-w-0">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-text-primary leading-snug">{phrase.spanish}</p>
+          {phrase.english && <p className="text-xs text-text-muted mt-0.5">{phrase.english}</p>}
+        </div>
+        <button
+          onClick={() => onDelete(phrase.id)}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-red-400 press-active transition-colors flex-shrink-0"
+          aria-label="Delete phrase"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  )
+}
 
 interface DiscoveryModalProps {
   discoveryWords: Word[]
@@ -137,6 +218,7 @@ export default function ReferenceMode({
   addSeedWord,
   addWord,
   toggleFavourite,
+  reorderFavouriteWords,
   deleteWord,
   incrementUseCount,
   favouritesOnly,
@@ -154,6 +236,33 @@ export default function ReferenceMode({
     window.addEventListener('focus', refresh)
     return () => window.removeEventListener('focus', refresh)
   }, [])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  )
+
+  const handleWordDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const favs = words.filter(w => w.is_favourite)
+    const oldIndex = favs.findIndex(w => w.id === active.id)
+    const newIndex = favs.findIndex(w => w.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    const newOrder = arrayMove(favs, oldIndex, newIndex).map(w => w.id)
+    reorderFavouriteWords(newOrder)
+  }, [words, reorderFavouriteWords])
+
+  const handlePhraseDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = savedPhrases.findIndex(p => p.id === active.id)
+    const newIndex = savedPhrases.findIndex(p => p.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    const reordered = arrayMove(savedPhrases, oldIndex, newIndex)
+    setSavedPhrases(reordered)
+    reorderSavedPhrases(reordered.map(p => p.id))
+  }, [savedPhrases])
 
   const handleDeletePhrase = useCallback((id: string) => {
     deleteSavedPhrase(id)
@@ -301,6 +410,22 @@ export default function ReferenceMode({
                   <p className="text-text-muted text-sm">{search ? 'No results found' : 'No favourited words yet'}</p>
                   {!search && <p className="text-text-muted text-xs mt-1">Tap the heart on any word to save it here</p>}
                 </div>
+              ) : !search ? (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleWordDragEnd}>
+                  <SortableContext items={filteredWords.map(w => w.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2">
+                      {filteredWords.map(word => (
+                        <SortableWordRow
+                          key={word.id}
+                          word={word}
+                          direction={direction}
+                          onTap={handleWordTap}
+                          onToggleFavourite={handleToggleFavourite}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               ) : (
                 <div className="space-y-2">
                   {filteredWords.map(word => (
@@ -328,23 +453,19 @@ export default function ReferenceMode({
                   <p className="text-text-muted text-xs mt-1">Build phrases in the Phrase Builder tab and save them</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {savedPhrases.map(p => (
-                    <div key={p.id} className="card flex items-center gap-2 px-3 py-2.5">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-text-primary leading-snug">{p.spanish}</p>
-                        {p.english && <p className="text-xs text-text-muted mt-0.5">{p.english}</p>}
-                      </div>
-                      <button
-                        onClick={() => handleDeletePhrase(p.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-red-400 press-active transition-colors flex-shrink-0"
-                        aria-label="Delete phrase"
-                      >
-                        <X size={14} />
-                      </button>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePhraseDragEnd}>
+                  <SortableContext items={savedPhrases.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2">
+                      {savedPhrases.map(p => (
+                        <SortablePhraseRow
+                          key={p.id}
+                          phrase={p}
+                          onDelete={handleDeletePhrase}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </div>
           </div>

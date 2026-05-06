@@ -3,13 +3,14 @@ import clsx from 'clsx'
 import type { Word, DirectionToggle } from '../../../types/spanish'
 
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
-  greetings: { label: 'Greetings', color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
-  eating_drinking: { label: 'Eating & Drinking', color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
-  travel_directions: { label: 'Travel', color: 'text-sky-400 bg-sky-400/10 border-sky-400/20' },
-  shopping: { label: 'Shopping', color: 'text-pink-400 bg-pink-400/10 border-pink-400/20' },
-  hotel: { label: 'Hotel', color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
-  emergencies: { label: 'Emergencies', color: 'text-red-400 bg-red-400/10 border-red-400/20' },
-  general: { label: 'General', color: 'text-text-muted bg-bg-elevated border-border-subtle' },
+  greetings:     { label: 'Greetings & Basics', color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
+  cafe:          { label: 'In a Café',          color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
+  restaurant:    { label: 'In a Restaurant',    color: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
+  shop:          { label: 'In a Shop',          color: 'text-pink-400 bg-pink-400/10 border-pink-400/20' },
+  hotel:         { label: 'In a Hotel',         color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
+  getting_around:{ label: 'Getting Around',     color: 'text-sky-400 bg-sky-400/10 border-sky-400/20' },
+  emergencies:   { label: 'Emergencies',        color: 'text-red-400 bg-red-400/10 border-red-400/20' },
+  general:       { label: 'General',            color: 'text-text-muted bg-bg-elevated border-border-subtle' },
 }
 
 interface Props {

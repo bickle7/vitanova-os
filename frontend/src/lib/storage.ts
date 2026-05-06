@@ -65,6 +65,24 @@ export function incrementUseCount(id: string): Word[] {
   return updated
 }
 
+// Migrate old topic-based categories to new situation-based ones
+const CATEGORY_MIGRATION: Record<string, string> = {
+  eating_drinking:   'restaurant',
+  travel_directions: 'getting_around',
+  shopping:          'shop',
+}
+
+export function migrateCategories(): void {
+  const words = getWords()
+  let changed = false
+  const updated = words.map(w => {
+    const newCat = CATEGORY_MIGRATION[w.category]
+    if (newCat) { changed = true; return { ...w, category: newCat } }
+    return w
+  })
+  if (changed) saveWords(updated as Word[])
+}
+
 export function isFirstLoad(): boolean {
   return localStorage.getItem(VERSION_KEY) === null
 }
@@ -112,4 +130,12 @@ export function deleteSavedPhrase(id: string): SavedPhrase[] {
   const updated = getSavedPhrases().filter(p => p.id !== id)
   localStorage.setItem(SAVED_PHRASES_KEY, JSON.stringify(updated))
   return updated
+}
+
+export function reorderSavedPhrases(orderedIds: string[]): SavedPhrase[] {
+  const phrases = getSavedPhrases()
+  const map = new Map(phrases.map(p => [p.id, p]))
+  const reordered = orderedIds.map(id => map.get(id)).filter(Boolean) as SavedPhrase[]
+  localStorage.setItem(SAVED_PHRASES_KEY, JSON.stringify(reordered))
+  return reordered
 }

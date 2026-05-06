@@ -6,13 +6,14 @@ import type { Category } from '../../../types/spanish'
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 
 const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
-  { id: 'greetings', label: 'Greetings', emoji: '👋' },
-  { id: 'eating_drinking', label: 'Eating & Drinking', emoji: '🍽️' },
-  { id: 'travel_directions', label: 'Travel & Directions', emoji: '✈️' },
-  { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
-  { id: 'hotel', label: 'Hotel', emoji: '🏨' },
-  { id: 'emergencies', label: 'Emergencies', emoji: '🚨' },
-  { id: 'general', label: 'General', emoji: '📝' },
+  { id: 'greetings',      label: 'Greetings & Basics', emoji: '👋' },
+  { id: 'cafe',           label: 'In a Café',           emoji: '☕' },
+  { id: 'restaurant',     label: 'In a Restaurant',     emoji: '🍽️' },
+  { id: 'shop',           label: 'In a Shop',           emoji: '🛍️' },
+  { id: 'hotel',          label: 'In a Hotel',          emoji: '🏨' },
+  { id: 'getting_around', label: 'Getting Around',      emoji: '🧭' },
+  { id: 'emergencies',    label: 'Emergencies',         emoji: '🚨' },
+  { id: 'general',        label: 'General',             emoji: '📝' },
 ]
 
 interface Props {

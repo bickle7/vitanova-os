@@ -1,9 +1,10 @@
 export type Category =
   | 'greetings'
-  | 'eating_drinking'
-  | 'travel_directions'
-  | 'shopping'
+  | 'cafe'
+  | 'restaurant'
+  | 'shop'
   | 'hotel'
+  | 'getting_around'
   | 'emergencies'
   | 'general'
 
