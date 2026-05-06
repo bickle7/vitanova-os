@@ -175,6 +175,75 @@ ${rawText.trim()}`,
   }
 })
 
+// Estimate calories — AI estimates calories from a natural language food description
+app.post('/api/estimate-calories', async (req, res) => {
+  const { description } = req.body
+  if (!description || typeof description !== 'string') {
+    return res.status(400).json({ error: 'description is required' })
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'AI service not configured' })
+  }
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      messages: [{
+        role: 'user',
+        content: `Estimate the total calories in this food/meal description: "${description.trim()}"
+
+Be practical and realistic. Assume typical serving sizes.
+Reply in JSON only: {"calories": <number>, "items": [{"name": "...", "calories": <number>}]}
+The items array should list each distinct food item with its individual calories.`,
+      }],
+    })
+    const text = (message.content[0] as { type: string; text: string }).text.trim()
+    const jsonText = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
+    const parsed = JSON.parse(jsonText)
+    res.json({ calories: Math.round(parsed.calories ?? 0), items: parsed.items ?? [] })
+  } catch (err) {
+    console.error('Calorie estimate error:', err)
+    res.status(500).json({ error: 'Failed to estimate calories' })
+  }
+})
+
+// Fitness weekly summary — AI generates a motivating weekly summary
+app.post('/api/fitness-summary', async (req, res) => {
+  const { consumed, burned, deficitDays, streak, weightChange } = req.body as {
+    consumed: number; burned: number; deficitDays: number; streak: number; weightChange?: number
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'AI service not configured' })
+  }
+  try {
+    const weightNote = weightChange != null
+      ? `Weight change this period: ${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)}kg.`
+      : ''
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: `Generate a short, motivating fitness summary (2-3 sentences max). Keep it personal, honest, and encouraging.
+
+Stats this week:
+- Calories consumed: ${consumed} kcal total
+- Calories burned (incl. BMR): ${burned} kcal total
+- Days in calorie deficit: ${deficitDays}/7
+- Current streak: ${streak} days
+${weightNote}
+
+Reply with just the summary text, no JSON, no bullet points.`,
+      }],
+    })
+    const summary = (message.content[0] as { type: string; text: string }).text.trim()
+    res.json({ summary })
+  } catch (err) {
+    console.error('Fitness summary error:', err)
+    res.status(500).json({ error: 'Failed to generate summary' })
+  }
+})
+
 // 404 handler
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' })
